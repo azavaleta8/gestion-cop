@@ -5,8 +5,8 @@ import { SessionProvider } from "next-auth/react";
 
 export function Providers({ children }) {
   return (
-    <SessionProvider>
+    //<SessionProvider>
         <HeroUIProvider>{children}</HeroUIProvider>
-    </SessionProvider>
+    //</SessionProvider>
   );
 }

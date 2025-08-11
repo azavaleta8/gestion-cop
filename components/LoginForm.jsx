@@ -44,7 +44,7 @@ const LoginForm = () => {
   };
 
   return (
-    <Card className="bg-white shadow-lg rounded-md px-8 py-4 w-[90%] md:w-[420px] h-[65%] flex flex-col justify-between">
+    <Card className="bg-white px-8 py-4 w-[90%] md:w-[420px] h-[65%] flex flex-col justify-between">
       <CardHeader className="flex flex-col gap-4 items-start">
         <h1 className="text-2xl font-black">Iniciar Sesión</h1>
         <p>Ingresa los datos de tu cuenta para iniciar sesión</p>
@@ -95,7 +95,7 @@ const LoginForm = () => {
           color="primary"
           type="submit"
           form="loginForm"
-          className="bg-blue-600 w-full py-3 text-lg font-semibold rounded-lg flex justify-center items-center"
+          className="w-full py-3 text-lg font-semibold rounded-lg flex justify-center items-center"
           isDisabled={loading}
           isLoading={loading}
         >

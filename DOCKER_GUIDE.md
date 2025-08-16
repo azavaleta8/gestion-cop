@@ -210,6 +210,7 @@ docker-compose logs postgres
 
 # Test database connection
 docker-compose exec nextjs sh
+
 # Inside container:
 node -e "console.log(process.env.DATABASE_URL)"
 ```

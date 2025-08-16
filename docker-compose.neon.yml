@@ -1,0 +1,21 @@
+version: "3.8"
+
+services:
+  # Next.js Application Service with Neon Database (no local PostgreSQL needed)
+  nextjs:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: gestion-cop-nextjs-neon-dev
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      DATABASE_URL: ${DATABASE_URL_NEON}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+      NEXTAUTH_URL: ${NEXTAUTH_URL}
+    ports:
+      - "3000:3000"
+    volumes:
+      # Mount source code for hot reload (since using Dockerfile.dev)
+      - .:/app
+      - /app/node_modules
+      - /app/.next

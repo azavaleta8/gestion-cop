@@ -1,4 +1,4 @@
-import LoginForm from "@/components/LoginForm"; // o ruta relativa
+import LoginForm from "@/src/components/LoginForm"; // o ruta relativa
 
 export default function HomePage() {
   return (

@@ -3,11 +3,33 @@
 import Sidebar from "@/components/Sidebar";
 import ProfileCard from "@/components/ProfileCard";
 import TopBar from "@/components/TopBar";
+import Horarios from "@/components/Horarios";
+import Documentos from "@/components/Documentos";
+import Configuracion from "@/components/Configuracion";
+
 import { ChevronDoubleLeftIcon, ChevronDoubleRightIcon } from "@heroicons/react/24/solid";
 import { useState } from "react";
 
 export default function Dashboard() {
   const [sidebarVisible, setSidebarVisible] = useState(true);
+  const [activeSection, setActiveSection] = useState("perfil");
+
+  // Permite renderizar el componente especifico seleccionado del sidebar
+  const renderContent = () => {
+    switch (activeSection) {
+      case "perfil":
+        return <ProfileCard />;
+      case "horarios":
+        return <Horarios />;
+      case "documentos":
+        return <Documentos />;
+      case "configuracion":
+        return <Configuracion />;
+      default:
+        return <ProfileCard />;
+    }
+  };
+
 
   return (
     <main className="flex flex-col">
@@ -19,7 +41,7 @@ export default function Dashboard() {
             sidebarVisible ? "w-64 p-8" : "w-0 p-0"
           } overflow-hidden flex flex-col justify-between`}
         >
-            <Sidebar />
+            <Sidebar onSelect={setActiveSection}/>
             {/* Botón toggle fijo en la esquina inferior izquierda */}
             <button
                 onClick={() => setSidebarVisible(!sidebarVisible)}
@@ -37,7 +59,7 @@ export default function Dashboard() {
 
         {/* Contenido principal del perfil */}
         <div className="flex flex-1 justify-center items-center">
-          <ProfileCard />
+          {renderContent()}
         </div>
       </div>
     </main>

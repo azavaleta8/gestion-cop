@@ -27,7 +27,8 @@ const LoginForm = () => {
   } = useForm();
 
   const onSubmit = async (data) => {
-    const { email, password } = data;
+    // Cuando se implemente lal autenticacion y la bd, se descomenta esta parte y se agrega la funcionalidad
+    /*const { email, password } = data;
     setLoading(true);
     const res = await signIn("credentials", {
       email,
@@ -40,7 +41,8 @@ const LoginForm = () => {
       setError("email", { message: res?.error });
     } else {
       router.push("/");
-    }
+    }*/
+    router.push("/home");
   };
 
   return (

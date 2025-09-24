@@ -6,7 +6,6 @@
 
 generator client {
   provider = "prisma-client-js"
-  output   = "../src/generated/prisma"
 }
 
 datasource db {
@@ -14,11 +13,29 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Eliminar o modificar esta tabla cuando se tenga el modelo de usuarios real, esta es solo para probar
-// el correcto funcionamiento de prisma en la base de datos local.
 model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
-  name      String?
-  createdAt DateTime @default(now())
+  id       Int    @id @default(autoincrement())
+  dni      String @unique
+  password String
+  name     String
+}
+
+model Rol {
+  id    Int     @id @default(autoincrement())
+  name  String  @unique
+  staff Staff[]
+}
+
+model Staff {
+  id    Int    @id @default(autoincrement())
+  dni   String @unique
+  name  String
+  phone String
+  rolId Int
+  rol   Rol    @relation(fields: [rolId], references: [id])
+}
+
+model Location {
+  id   Int    @id @default(autoincrement())
+  name String @unique
 }

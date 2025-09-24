@@ -18,6 +18,12 @@ const Sidebar = ({ onSelect }) => {
       <button onClick={() => onSelect("perfil")} className="text-blue-600 hover:underline text-left">
         Perfil
       </button>
+      <button onClick={() => onSelect("localizaciones")} className="text-blue-600 hover:underline text-left">
+        Localizaciones
+      </button>
+      <button onClick={() => onSelect("trabajadores")} className="text-blue-600 hover:underline text-left">
+        Trabajadores
+      </button>
       <button onClick={() => onSelect("horarios")} className="text-blue-600 hover:underline text-left">
         Horarios
       </button>

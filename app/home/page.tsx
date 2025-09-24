@@ -5,20 +5,29 @@ import ProfileCard from "@/components/ProfileCard";
 import TopBar from "@/components/TopBar";
 import Horarios from "@/components/Horarios";
 import Documentos from "@/components/Documentos";
+import Localizaciones from "@/components/Localizaciones";
+import Trabajadores from "@/components/Trabajadores";
 import Configuracion from "@/components/Configuracion";
 
 import { ChevronDoubleLeftIcon, ChevronDoubleRightIcon } from "@heroicons/react/24/solid";
 import { useState } from "react";
+import { useSearchParams } from 'next/navigation';
 
 export default function Dashboard() {
+  const params = useSearchParams();
+  const defaultSection = params.get('section') || 'perfil'; // Extraemos la seccion clickeada de la sidebar cuando estamos en otra ruta, por ejemplo la ruta de localizacion/[id]/page.jsx
   const [sidebarVisible, setSidebarVisible] = useState(true);
-  const [activeSection, setActiveSection] = useState("perfil");
+  const [activeSection, setActiveSection] = useState(defaultSection);
 
   // Permite renderizar el componente especifico seleccionado del sidebar
   const renderContent = () => {
     switch (activeSection) {
       case "perfil":
         return <ProfileCard />;
+      case "localizaciones":
+        return <Localizaciones />;
+      case "trabajadores":
+        return <Trabajadores />;
       case "horarios":
         return <Horarios />;
       case "documentos":
@@ -29,7 +38,6 @@ export default function Dashboard() {
         return <ProfileCard />;
     }
   };
-
 
   return (
     <main className="flex flex-col">
@@ -58,7 +66,7 @@ export default function Dashboard() {
         </aside>
 
         {/* Contenido principal del perfil */}
-        <div className="flex flex-1 justify-center items-center">
+        <div className="flex flex-1 justify-center items-start p-10 overflow-auto">
           {renderContent()}
         </div>
       </div>

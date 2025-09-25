@@ -8,26 +8,45 @@ import { useState, useEffect } from "react";
 import Loader from "@/components/Loader";
 import LocalizacionCard from "@/components/LocalizacionCard";
 
-
 const Localizaciones = () => {
     const [localizaciones, setLocalizaciones] = useState([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
-
-    // Obtener localizaciones con filtros
-    // Agregar la llamada a la api para obtener las localizaciones
-    /*useEffect(() => {
-        setLoading(true);
-
-        fetch(`/api/localizaciones`)
-        .then((res) => res.json())
-        .then((data) => setLocalizaciones(data.localizaciones || []))
-        .finally(() => setLoading(false));
-    }, [search, category, priceMin, priceMax, sortBy, order]);*/
+    const [message, setMessage] = useState('');
+    
     useEffect(() => {
-        setLocalizaciones([{nombre: "Guarenas", id: 1}, {nombre: "Guatire", id: 2}, {nombre: "Guarenas", id: 3}, {nombre: "Guatire", id: 4}, {nombre: "Guarenas", id: 5}, {nombre: "Guatire", id: 6}]);
-        setLoading(false);
+        const fetchLocationsData = async () => {
+            setLoading(true);
+            try {
+              const res = await fetch("/api/locations"); // Traemos todas las localizaciones
+              if (res.ok) {
+                const { localizaciones } = await res.json(); // Las pasamos a json
+                if (localizaciones) {
+                    setLocalizaciones(localizaciones);
+                } else {
+                    setMessage('No se pudieron cargar los datos de las localizaciones.');
+                }
+              } else {
+                setMessage('Error al cargar los datos de las localizaciones.');
+              }
+
+            } catch (error) {
+              setMessage('Error de red al cargar los datos de las localizaciones.');
+              console.error('Failed to fetch location data', error);
+            } finally {
+              setLoading(false);
+            }
+        };
+        fetchLocationsData();
     }, []);
+    
+    // Transforma una imagen a base64
+    const fileToBase64 = file => new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+    });
 
     return (
         <div className="flex flex-col items-center gap-6">
@@ -50,8 +69,7 @@ const Localizaciones = () => {
                 ) : localizaciones.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-60 text-gray-500 w-full">
                     <img
-                    //src="/no-products.gif"
-                    src="/glove.svg"
+                    src="/globe.svg"
                     alt="Sin localizaciones"
                     className="w-28 h-28 mb-2"
                     style={{ objectFit: "contain" }}
@@ -67,10 +85,10 @@ const Localizaciones = () => {
                         ))
                     ) : (
                         localizaciones.filter((localizacion) =>
-                            localizacion.nombre.toLowerCase().includes(search.toLowerCase())
+                            localizacion.name.toLowerCase().includes(search.toLowerCase())
                             ).length > 0 ? (
                                 localizaciones.filter((localizacion) =>
-                                    localizacion.nombre.toLowerCase().includes(search.toLowerCase())
+                                    localizacion.name.toLowerCase().includes(search.toLowerCase())
                                 ).map((localizacion) => (
                                     <LocalizacionCard key={localizacion.id} localizacion={localizacion} />
                                     ))

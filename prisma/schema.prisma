@@ -38,4 +38,5 @@ model Staff {
 model Location {
   id   Int    @id @default(autoincrement())
   name String @unique
+  image String?
 }

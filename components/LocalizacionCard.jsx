@@ -6,7 +6,6 @@ const CARD_WIDTH = "w-80";
 const IMAGE_HEIGHT = "h-[240px] md:h-[260px] xl:h-[280px]";
 
 const LocalizacionCard = ({ localizacion }) => {
-  const [showInfo, setShowInfo] = useState(false);
   const router = useRouter();
 
   return (
@@ -16,17 +15,15 @@ const LocalizacionCard = ({ localizacion }) => {
           <div className={`w-full ${IMAGE_HEIGHT} flex items-center justify-center bg-gray-50 rounded-t-lg`}>
             <Image
               className={`object-cover w-full ${IMAGE_HEIGHT}`}
-              //src={product.image}
-              //alt={product.name}
-              src={"/next.svg"}
-              alt={localizacion.nombre}
+              src={`data:image/png;base64,${localizacion.image}`} // Transformamos la imagen a base64
+              alt={localizacion.name}
               shadow="sm"
               radius="sm"
               isZoomed
             />
           </div>
           <div className="flex flex-col gap-1 p-4">
-            <h2 className="font-bold text-xl line-clamp-1">{localizacion.nombre}</h2>
+            <h2 className="font-bold text-xl line-clamp-1">{localizacion.name}</h2>
             <h3 className="text-sm text-gray-500">160 Policias Asignados</h3>
           </div>
         </CardBody>

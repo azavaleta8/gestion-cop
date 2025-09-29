@@ -12,36 +12,52 @@ export default function Localizacion() {
   const id = params.id; // Obtiene el id de la URL
   const [sidebarVisible, setSidebarVisible] = useState(true);
   const [localizacion, setLocalizacion] = useState(null);
+  const [trabajadores, setTrabajadores] = useState(null);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
 
   useEffect(() => {
-        const fetchLocationData = async () => {
-            setLoading(true);
-            try {
-              const res = await fetch(`/api/locations/${id}`); // Traemos la localización por su id
-              if (res.ok) {
-                const { location } = await res.json(); // Las pasamos a json
-                if (location) {
-                    setLocalizacion(location);
-                } else {
-                    setMessage('No se pudieron cargar los datos de las localizaciones.');
-                }
-              } else {
-                setMessage('Error al cargar los datos de las localizaciones.');
-              }
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const [locationRes, staffRes] = await Promise.all([
+          fetch(`/api/locations/${id}`),
+          fetch(`/api/locations/${id}/staff`)
+        ]);
 
-            } catch (error) {
-              setMessage('Error de red al cargar los datos de las localizaciones.');
-              console.error('Failed to fetch location data', error);
-            } finally {
-              setLoading(false);
-            }
-        };
-        fetchLocationData();
-  }, [id]);
+        if (locationRes.ok) {
+          const { location } = await locationRes.json();
+          if (location) {
+            setLocalizacion(location);
+          } else {
+            setMessage('No se pudieron cargar los datos de la localización.');
+          }
+        } else {
+          setMessage('Error al cargar los datos de la localización.');
+        }
 
-  
+        if (staffRes.ok) {
+          const { staff } = await staffRes.json();
+          if (staff) {
+            setTrabajadores(staff);
+          } else {
+            setMessage('No se pudieron cargar los datos del personal.');
+          }
+        } else {
+          setMessage('Error al cargar los datos del personal.');
+        }
+
+      } catch (error) {
+        setMessage('Error de red al cargar los datos.');
+        console.error('Error al cargar datos:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+}, [id]);
+
   return (
     <main className="flex flex-col">
       {/* Vuelvo a cargar la TopBar y la Sidear */}
@@ -73,17 +89,57 @@ export default function Localizacion() {
         </aside>
 
         {/* Contenido principal del perfil */}
-        <div className="flex flex-1 justify-center items-start p-10 overflow-auto">
+        <div className="flex flex-col flex-1 justify-start items-start overflow-auto">
             {loading && <p>Cargando...</p>}
             {/* Colocar "localizacion &&" evita que se renderice cuando localizacion es todavia null */}
             {localizacion && (
-              <div>
-                <h1>Información de la ubicación {localizacion.name}</h1>
-                <img src={`data:image/png;base64,${localizacion.image}`} alt={localizacion.name} className="w-96 h-96 object-cover mb-4" />
+              <div
+                className="sticky top-0 w-full h-[40vh] bg-cover bg-center flex justify-center items-center p-6 z-10"
+                style={{
+                  backgroundImage: `url(data:image/png;base64,${localizacion.image})`,
+                }}
+              >
+                <h1 className="text-2xl font-bold text-white  p-4 rounded text-center"
+                    style={{
+                      backgroundColor: "rgba(0, 0, 0, 0.65)", // negro con 50% de opacidad
+                    }}
+                >
+                  Información de la ubicación {localizacion.name}
+                </h1>
               </div>
             )}
 
-            {/* Renderiza más detalles aquí */}
+            {/* Tabla de los trabajadores de la localización */}
+            {trabajadores && (
+              <table className="min-w-[80%] bg-white mx-auto border border-gray-200 rounded shadow-md rounded-lg mt-8">
+                <thead className="bg-gray-100">
+                  <tr>
+                    <th className="text-left px-4 py-2 border-b">Nombre</th>
+                    <th className="text-left px-4 py-2 border-b">Cédula</th>
+                    <th className="text-left px-4 py-2 border-b">Teléfono</th>
+                    <th className="text-left px-4 py-2 border-b">Cargo</th>
+                    <th className="text-left px-4 py-2 border-b">Guardia</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {trabajadores.length === 0 ? (
+                    <tr>
+                      <td colSpan="5" className="text-center px-4 py-2 border-b">
+                        No hay trabajadores asignados
+                      </td>
+                    </tr>
+                  ) : (
+                    trabajadores.map((trabajador) => (
+                      <tr key={trabajador.id} className="hover:bg-gray-50">
+                        <td className="px-4 py-2 border-b">{trabajador.name}</td>
+                        <td className="px-4 py-2 border-b">{trabajador.dni}</td>
+                        <td className="px-4 py-2 border-b">{trabajador.phone}</td>
+                      <td className="px-4 py-2 border-b">{trabajador.rol?.name}</td>
+                      <td className="px-4 py-2 border-b">{trabajador.day ?? "No tiene día asignado"}</td>
+                    </tr>
+                  )))}
+                </tbody>
+              </table>)}
         </div>
       </div>
     </main>

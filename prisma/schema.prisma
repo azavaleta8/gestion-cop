@@ -31,12 +31,17 @@ model Staff {
   dni   String @unique
   name  String
   phone String
+  day   String?
+  last_guard Int
   rolId Int
   rol   Rol    @relation(fields: [rolId], references: [id])
+  locationId Int?
+  location Location? @relation(fields: [locationId], references: [id])
 }
 
 model Location {
   id   Int    @id @default(autoincrement())
   name String @unique
   image String?
+  staff Staff[] // Relación uno-a-muchos: una Location tiene muchos trabajadores
 }

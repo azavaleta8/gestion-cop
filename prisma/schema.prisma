@@ -32,7 +32,9 @@ model Staff {
   name  String
   phone String
   day   String?
-  last_guard Int
+  last_guard String?
+  total_hours Int @default(0)
+  image String?
   rolId Int
   rol   Rol    @relation(fields: [rolId], references: [id])
   locationId Int?

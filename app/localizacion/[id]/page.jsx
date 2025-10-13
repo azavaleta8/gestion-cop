@@ -111,33 +111,34 @@ export default function Localizacion() {
 
             {/* Tabla de los trabajadores de la localización */}
             {trabajadores && (
-              <table className="min-w-[80%] bg-white mx-auto border border-gray-200 rounded shadow-md rounded-lg mt-8">
-                <thead className="bg-gray-100">
+              <table className="min-w-[80%] bg-white mx-auto border border-gray-300 rounded-lg shadow-lg mt-8 overflow-hidden">
+                <thead className="bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 uppercase text-sm tracking-wider">
                   <tr>
-                    <th className="text-left px-4 py-2 border-b">Nombre</th>
-                    <th className="text-left px-4 py-2 border-b">Cédula</th>
-                    <th className="text-left px-4 py-2 border-b">Teléfono</th>
-                    <th className="text-left px-4 py-2 border-b">Cargo</th>
-                    <th className="text-left px-4 py-2 border-b">Guardia</th>
+                    <th className="px-4 py-3 text-left">Nombre</th>
+                    <th className="px-4 py-3 text-left">Cédula</th>
+                    <th className="px-4 py-3 text-left">Teléfono</th>
+                    <th className="px-4 py-3 text-left">Cargo</th>
+                    <th className="px-4 py-3 text-left">Guardia</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-gray-200">
                   {trabajadores.length === 0 ? (
                     <tr>
-                      <td colSpan="5" className="text-center px-4 py-2 border-b">
+                      <td colSpan="5" className="text-center px-4 py-4 text-gray-500 italic">
                         No hay trabajadores asignados
                       </td>
                     </tr>
                   ) : (
                     trabajadores.map((trabajador) => (
-                      <tr key={trabajador.id} className="hover:bg-gray-50">
-                        <td className="px-4 py-2 border-b">{trabajador.name}</td>
-                        <td className="px-4 py-2 border-b">{trabajador.dni}</td>
-                        <td className="px-4 py-2 border-b">{trabajador.phone}</td>
-                      <td className="px-4 py-2 border-b">{trabajador.rol?.name}</td>
-                      <td className="px-4 py-2 border-b">{trabajador.day ?? "No tiene día asignado"}</td>
-                    </tr>
-                  )))}
+                      <tr key={trabajador.id} className="hover:bg-gray-50 transition-colors duration-200">
+                        <td className="px-4 py-3 text-sm text-gray-800 font-medium">{trabajador.name}</td>
+                        <td className="px-4 py-3 text-sm text-gray-600">{trabajador.dni}</td>
+                        <td className="px-4 py-3 text-sm text-gray-600">{trabajador.phone}</td>
+                        <td className="px-4 py-3 text-sm text-gray-600">{trabajador.rol?.name}</td>
+                        <td className="px-4 py-3 text-sm text-gray-600">{trabajador.day ?? "No tiene día asignado"}</td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>)}
         </div>

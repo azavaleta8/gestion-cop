@@ -3,10 +3,13 @@
 import {
   Card,
   Input,
+  Button
 } from "@heroui/react";
 import { PlusIcon, PhotoIcon, UserCircleIcon  } from "@heroicons/react/24/solid";
 import { useState, useEffect } from "react";
 import Loader from "@/components/Loader";
+import { useRouter } from 'next/navigation';
+import { encode } from "js-base64";
 
 const Trabajadores = () => {
     const [loading, setLoading] = useState(true);
@@ -19,6 +22,7 @@ const Trabajadores = () => {
     const [newRol, setNewRol] = useState("");
     const [newImage, setNewImage] = useState(null);
     const [funcionarios, setFuncionarios] = useState([]);
+    const router = useRouter();
 
     useEffect(() => {
         const fetchStaffData = async () => {
@@ -285,6 +289,7 @@ const Trabajadores = () => {
                                         <th className="px-4 py-3 text-left">Guardia</th>
                                         <th className="px-4 py-3 text-left">Horas de guardias</th>
                                         <th className="px-4 py-3 text-left">Última Guardia</th>
+                                        <th className="px-4 py-3 text-left">Opciones</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-200">
@@ -308,6 +313,53 @@ const Trabajadores = () => {
                                         <td className="px-4 py-3 text-sm text-gray-600">{trabajador.day ?? "No tiene día asignado"}</td>
                                         <td className="px-4 py-3 text-sm text-gray-600">{trabajador.total_hours}</td>
                                         <td className="px-4 py-3 text-sm text-gray-600">{trabajador.last_guard ?? "Nunca ha realizado una guardia"}</td>
+                                        <td className="px-4 py-3 text-sm text-gray-600">
+                                            <div className="flex gap-2 mt-4">
+                                                <Button
+                                                    color="primary"
+                                                    className="px-4 py-2 text-white rounded transition flex items-center gap-2 bg-green-600 hover:bg-green-700"
+                                                    radius="sm"
+                                                    size="md"
+                                                    onPress={() => {
+                                                        const encodedId = encode(trabajador.id.toString());
+                                                        router.push(`/trabajador/${encodedId}`);
+                                                    }}
+                                                >
+                                                    Ver Perfil
+                                                </Button>
+                                                <Button
+                                                    color="primary"
+                                                    className="px-4 py-2 text-white rounded transition flex items-center gap-2 bg-red-600 hover:bg-red-700"
+                                                    radius="sm"
+                                                    size="md"
+                                                    onPress={async () => {
+                                                        const confirmacion = window.confirm("¿Estás seguro de que quieres eliminar este funcionario?");
+                                                        if (!confirmacion) return;
+
+                                                        try {
+                                                            const encodedId = encode(trabajador.id.toString()); // Codifica el ID
+
+                                                            const res = await fetch(`/api/users/${encodedId}`, {
+                                                                method: "DELETE",
+                                                            });
+
+                                                            if (res.ok) {
+                                                                alert("Funcionario eliminado correctamente");
+                                                                // Se actualiza la lista de funcionarios sin necesidad de recargar la pagina
+                                                                setFuncionarios((prev) => prev.filter((f) => f.id !== trabajador.id));
+                                                            } else {
+                                                                alert("Error al eliminar el funcionario");
+                                                            }
+                                                        } catch (error) {
+                                                            console.error("Error al eliminar:", error);
+                                                            alert("Error de red al intentar eliminar");
+                                                        }
+                                                    }}
+                                                >
+                                                    Eliminar Funcionario
+                                                </Button>
+                                            </div>
+                                        </td>
                                     </tr>
                                 ))}
                                 </tbody>

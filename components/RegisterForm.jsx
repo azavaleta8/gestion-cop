@@ -95,15 +95,6 @@ const RegisterForm = () => {
             isRequired
           />
           <Input
-            {...register("email", { required: "El correo es obligatorio" })}
-            variant="underlined"
-            label="Correo electrónico"
-            name="email"
-            isInvalid={!!errors.email}
-            errorMessage={errors.email?.message}
-            isRequired
-          />
-          <Input
             {...register("password", {
               required: "La contraseña es obligatoria",
             })}

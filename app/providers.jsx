@@ -3,10 +3,10 @@
 import { HeroUIProvider } from "@heroui/react";
 import { SessionProvider } from "next-auth/react";
 
-export function Providers({ children }) {
+export function Providers({ children, session }) {
   return (
-    //<SessionProvider>
-        <HeroUIProvider>{children}</HeroUIProvider>
-    //</SessionProvider>
+    <SessionProvider session={session}>
+      <HeroUIProvider>{children}</HeroUIProvider>
+    </SessionProvider>
   );
 }

@@ -28,20 +28,21 @@ const LoginForm = () => {
 
   const onSubmit = async (data) => {
     // Cuando se implemente lal autenticacion y la bd, se descomenta esta parte y se agrega la funcionalidad
-    /*const { email, password } = data;
+    const { dni, password } = data;
     setLoading(true);
     const res = await signIn("credentials", {
-      email,
+      dni,
       password,
       redirect: false,
     });
     setLoading(false);
 
     if (res?.error) {
-      setError("email", { message: res?.error });
-    } else {
-      router.push("/");
-    }*/
+      setError("dni", { message: res?.error });
+      return;
+    }
+
+    // Successful sign in
     router.push("/home");
   };
 
@@ -53,17 +54,17 @@ const LoginForm = () => {
       </CardHeader>
       <CardBody>
         <form
-          id="loginForm"
+          id="signinForm"
           onSubmit={handleSubmit(onSubmit)}
           className="h-full flex flex-col gap-6 items-center justify-center"
         >
           <Input
-            {...register("email")}
+            {...register("dni")}
             variant="underlined"
-            label="Correo electrónico"
-            name="email"
-            isInvalid={!!errors.email}
-            errorMessage={errors.email?.message}
+            label="Cédula de Identidad"
+            name="dni"
+            isInvalid={!!errors.dni}
+            errorMessage={errors.dni?.message}
             isRequired
           />
           <Input
@@ -96,7 +97,7 @@ const LoginForm = () => {
         <Button
           color="primary"
           type="submit"
-          form="loginForm"
+          form="signinForm"
           className="w-full py-3 text-lg font-semibold rounded-lg flex justify-center items-center"
           isDisabled={loading}
           isLoading={loading}
@@ -105,7 +106,7 @@ const LoginForm = () => {
         </Button>
         <p>
           ¿No tienes cuenta?{" "}
-          <Link href="/register" className="underline text-primary">
+          <Link href="/signup" className="underline text-primary">
             Regístrate
           </Link>
         </p>

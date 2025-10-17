@@ -12,7 +12,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
-import Swal from 'sweetalert2'
+import Swal from "sweetalert2";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 const RegisterForm = () => {
@@ -27,34 +27,40 @@ const RegisterForm = () => {
 
   const onSubmit = async (data) => {
     setLoading(true);
-    /*const response = await fetch("/api/register", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(data),
-    });*/
-
-    const response = true // Quitar cuando se tenga la base de datos
-
-    setLoading(false);
-
-    //if (response.ok) {
-    if (response) {
-      Swal.fire({
-        title: '¡Registro exitoso!',
-        text: '',
-        icon: 'success',
-        confirmButtonText: 'Continuar'
+    try {
+      const res = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          dni: data.dni,
+          password: data.password,
+          name: data.name,
+        }),
       });
-      router.push("/login");
-    } else {
-      Swal.fire({
-        title: 'Error',
-        text: 'Ocurrió un error al registrar el usuario',
-        icon: 'error',
-        confirmButtonText: 'Continuar'
-      });
+      setLoading(false);
+
+      if (res.ok) {
+        Swal.fire({
+          title: "¡Registro exitoso!",
+          text: "",
+          icon: "success",
+          confirmButtonText: "Continuar",
+        });
+        router.push("/signin");
+      } else {
+        Swal.fire({
+          title: "Error",
+          text: "Ocurrió un error al registrar el usuario",
+          icon: "error",
+          confirmButtonText: "Continuar",
+        });
+      }
+    } catch (e) {
+      setLoading(false);
+      // Log the error for debugging
+      // eslint-disable-next-line no-console
+      console.error("register error", e);
+      Swal.fire({ title: "Error", text: "Ocurrió un error", icon: "error" });
     }
   };
 
@@ -80,6 +86,15 @@ const RegisterForm = () => {
             isRequired
           />
           <Input
+            {...register("dni", { required: "La cédula es obligatoria" })}
+            variant="underlined"
+            label="Cédula de Identidad"
+            name="dni"
+            isInvalid={!!errors.dni}
+            errorMessage={errors.dni?.message}
+            isRequired
+          />
+          <Input
             {...register("email", { required: "El correo es obligatorio" })}
             variant="underlined"
             label="Correo electrónico"
@@ -89,7 +104,9 @@ const RegisterForm = () => {
             isRequired
           />
           <Input
-            {...register("password", { required: "La contraseña es obligatoria" })}
+            {...register("password", {
+              required: "La contraseña es obligatoria",
+            })}
             variant="underlined"
             label="Contraseña"
             type={showPassword ? "text" : "password"}
@@ -126,7 +143,7 @@ const RegisterForm = () => {
         </Button>
         <p>
           ¿Ya tienes cuenta?{" "}
-          <Link href="/login" className="underline text-primary">
+          <Link href="/signin" className="underline text-primary">
             Inicia sesión
           </Link>
         </p>

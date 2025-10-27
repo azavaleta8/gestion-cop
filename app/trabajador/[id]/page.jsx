@@ -14,6 +14,9 @@ export default function Localizacion() {
   const [funcionario, setFuncionario] = useState(null);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
+  const [roles, setRoles] = useState([]);
+  const [selectedRolId, setSelectedRolId] = useState('');
 
   useEffect(() => {
         const fetchUserData = async () => {
@@ -24,6 +27,7 @@ export default function Localizacion() {
                 const { funcionario } = await res.json(); // Las pasamos a json
                 if (funcionario) {
                     setFuncionario(funcionario);
+                    setSelectedRolId(funcionario.rolId);
                 } else {
                     setMessage('No se pudieron cargar los datos del funcionario.');
                 }
@@ -38,8 +42,40 @@ export default function Localizacion() {
               setLoading(false);
             }
         };
+        const fetchRoles = async () => {
+            try {
+                const res = await fetch('/api/roles');
+                if(res.ok) {
+                    const { roles } = await res.json();
+                    setRoles(roles);
+                }
+            } catch (error) {
+                console.error('Failed to fetch roles', error);
+            }
+        }
         fetchUserData();
-    }, []);
+        fetchRoles();
+    }, [id]);
+
+  const handleUpdate = async () => {
+    try {
+      const res = await fetch(`/api/users/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rolId: parseInt(selectedRolId) }),
+      });
+      if (res.ok) {
+        setIsEditing(false);
+        // Optionally, refetch user data to show updated info
+        const updatedFuncionario = await res.json();
+        setFuncionario(updatedFuncionario.funcionario);
+      } else {
+        setMessage('Error al actualizar el funcionario.');
+      }
+    } catch (error) {
+        setMessage('Error de red al actualizar el funcionario.');
+    }
+  };
 
   return (
     <main className="flex flex-col">
@@ -80,6 +116,21 @@ export default function Localizacion() {
                         <p><strong>Teléfono:</strong> {funcionario.phone}</p>
                         <p><strong>Última guardia:</strong> {funcionario.last_guard}</p>
                         <p><strong>Total de horas:</strong> {funcionario.total_hours}</p>
+                        
+                        {isEditing ? (
+                            <div className="flex items-center gap-4 mt-4">
+                                <select value={selectedRolId} onChange={(e) => setSelectedRolId(e.target.value)} className="p-2 border rounded-md">
+                                    {roles.map(rol => <option key={rol.id} value={rol.id}>{rol.name}</option>)}
+                                </select>
+                                <button onClick={handleUpdate} className="px-4 py-2 bg-green-500 text-white rounded-md">Guardar</button>
+                                <button onClick={() => setIsEditing(false)} className="px-4 py-2 bg-gray-300 rounded-md">Cancelar</button>
+                            </div>
+                        ) : (
+                            <div className="flex items-center gap-4 mt-4">
+                                <p><strong>Rol:</strong> {funcionario.rol?.name}</p>
+                                <button onClick={() => setIsEditing(true)} className="px-4 py-2 bg-blue-500 text-white rounded-md">Cambiar Rol</button>
+                            </div>
+                        )}
                     </div>
                 ) : (
                     <p className="text-gray-500">{loading ? "Cargando..." : message}</p>

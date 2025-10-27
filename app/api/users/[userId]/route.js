@@ -79,3 +79,41 @@ export async function DELETE(req) {
     await prisma.$disconnect();
   }
 }
+
+// Actualiza un trabajador por su id
+export async function PUT(req) {
+    try {
+        const url = new URL(req.url);
+        const encodedId = url.pathname.split('/').pop();
+        const { rolId } = await req.json();
+
+        if (!encodedId) {
+            return new Response(JSON.stringify({ message: "ID de funcionario no proporcionado" }), {
+                status: 400,
+                headers: { 'Content-Type': 'application/json' },
+            });
+        }
+
+        const decodedId = decode(encodedId);
+
+        const updatedFuncionario = await prisma.staff.update({
+            where: { id: parseInt(decodedId) },
+            data: { rolId },
+            include: { rol: true }
+        });
+
+        return new Response(JSON.stringify({ funcionario: updatedFuncionario }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+        });
+
+    } catch (error) {
+        console.error('Error al actualizar el funcionario:', error);
+        return new Response(JSON.stringify({ message: 'Error al actualizar el funcionario', error: error.message }), {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' },
+        });
+    } finally {
+        await prisma.$disconnect();
+    }
+}

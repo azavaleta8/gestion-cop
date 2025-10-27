@@ -2,8 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import GuardRoster from '../../../components/GuardRoster';
-import StaffHistory from '../../../components/StaffHistory';
+import WeeklyGuardManager from '../../../components/WeeklyGuardManager';
 
 const GuardiasPage = () => {
   return (
@@ -19,10 +18,7 @@ const GuardiasPage = () => {
               Asignar Guardia Semanal
             </Link>
           </div>
-          <GuardRoster />
-          <div className="mt-8">
-            <StaffHistory />
-          </div>
+          <WeeklyGuardManager readOnly={true} />
         </main>
       </div>
     </div>

@@ -3,48 +3,35 @@ import { prisma } from "@/lib/prisma";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const date = searchParams.get("date");
-  const locationId = searchParams.get("locationId");
+  const startDateParam = searchParams.get("startDate");
+  const endDateParam = searchParams.get("endDate");
 
-  if (!date) {
+  if (!startDateParam || !endDateParam) {
     return NextResponse.json(
-      { error: "Date is required" },
+      { error: "startDate and endDate are required" },
       { status: 400 }
     );
   }
 
-  const startDate = new Date(date);
-  startDate.setHours(0, 0, 0, 0);
-  const endDate = new Date(date);
-  endDate.setHours(23, 59, 59, 999);
-
-  let whereClause: any = {
-    assignedDate: {
-      gte: startDate,
-      lte: endDate,
-    },
-  };
-
-  if (locationId) {
-    whereClause.locationId = parseInt(locationId);
-  }
+  const startDate = new Date(startDateParam);
+  const endDate = new Date(endDateParam);
 
   try {
-    const duties = await prisma.guardDuty.findMany({
-      where: whereClause,
+    const guards = await prisma.guardDuty.findMany({
+      where: {
+        assignedDate: {
+          gte: startDate,
+          lte: endDate,
+        },
+      },
       include: {
         assignedStaff: true,
-        actualStaff: true,
         location: true,
-        rol: true,
-      },
-      orderBy: {
-        assignedDate: "asc",
       },
     });
-    return NextResponse.json(duties);
+    return NextResponse.json({ guards });
   } catch (error) {
-    console.error("Error fetching guard duties:", error);
+    console.error("Error fetching guards:", error);
     return NextResponse.json(
       { error: "Internal Server Error" },
       { status: 500 }

@@ -1,4 +1,4 @@
-const Documentos = () => {
+const DocumentosPage = () => {
   return (
     <div className="p-4">
       <h2 className="text-xl font-bold mb-2">Documentos</h2>
@@ -7,4 +7,4 @@ const Documentos = () => {
   );
 };
 
-export default Documentos;
+export default DocumentosPage;

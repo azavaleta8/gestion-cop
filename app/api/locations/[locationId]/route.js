@@ -1,6 +1,4 @@
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from "@/lib/prisma";
 
 // (No esta listo aun)
 /*
@@ -70,8 +68,6 @@ export async function GET(req) {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
     });
-  } finally {
-    await prisma.$disconnect();
   }
 }
 

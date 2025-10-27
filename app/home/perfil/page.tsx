@@ -1,6 +1,7 @@
+"use client";
 import { useSession } from "next-auth/react";
 
-const ProfileCard = () => {
+const ProfilePage = () => {
   const { data: session } = useSession();
   return (
     <div className="text-center">
@@ -19,4 +20,4 @@ const ProfileCard = () => {
   );
 };
 
-export default ProfileCard;
+export default ProfilePage;

@@ -11,7 +11,25 @@ import Loader from "@/components/Loader";
 import { useRouter } from 'next/navigation';
 import { encode } from "js-base64";
 
-const Trabajadores = () => {
+interface Rol {
+    id: number;
+    name: string;
+}
+
+interface Funcionario {
+    id: number;
+    name: string;
+    dni: string;
+    phone: string;
+    rolId: number;
+    image: string;
+    nameRol: string;
+    day?: string;
+    total_hours?: number;
+    last_guard?: string;
+}
+
+const TrabajadoresPage = () => {
     const [loading, setLoading] = useState(true);
     const [message, setMessage] = useState('');
     const [search, setSearch] = useState("");
@@ -20,8 +38,9 @@ const Trabajadores = () => {
     const [newDni, setNewDni] = useState("");
     const [newPhone, setNewPhone] = useState("");
     const [newRol, setNewRol] = useState("");
-    const [newImage, setNewImage] = useState(null);
-    const [funcionarios, setFuncionarios] = useState([]);
+    const [newImage, setNewImage] = useState<File | null>(null);
+    const [funcionarios, setFuncionarios] = useState<Funcionario[]>([]);
+    const [roles, setRoles] = useState<Rol[]>([]);
     const router = useRouter();
 
     useEffect(() => {
@@ -46,17 +65,16 @@ const Trabajadores = () => {
             }
 
             // 2. Crear un mapa de roles por ID
-            const rolesMap = new Map(roles.map((rol) => [rol.id, rol.name]));
+            const rolesMap = new Map(roles.map((rol: Rol) => [rol.id, rol.name]));
 
             // 3. Enriquecer cada funcionario con nameRol
-            const funcionariosConNombreRol = funcionarios.map((f) => ({
+            const funcionariosConNombreRol = funcionarios.map((f: Funcionario) => ({
                 ...f,
                 nameRol: rolesMap.get(f.rolId) || "Rol desconocido"
             }));
 
-            console.log
-
             setFuncionarios(funcionariosConNombreRol);
+            setRoles(roles || []);
             } catch (error) {
                 setMessage("Error de red al cargar los datos.");
                 console.error("Failed to fetch staff data", error);
@@ -70,32 +88,21 @@ const Trabajadores = () => {
 
     
     // Transforma una imagen a base64
-    const fileToBase64 = file => new Promise((resolve, reject) => {
+    const fileToBase64 = (file: File): Promise<string> => new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result);
+      reader.onload = () => {
+        if (typeof reader.result === 'string') {
+            resolve(reader.result);
+        } else {
+            reject(new Error('Failed to convert file to base64 string'));
+        }
+      };
       reader.onerror = reject;
     });
 
-    // Para buscar un rol por su nombre
-    const obtenerRolIdPorNombre = async (rolNewName) => {
-        try {
-            const res = await fetch(`/api/roles/by-name?name=${encodeURIComponent(rolNewName)}`);
-
-            if (!res.ok) {
-                throw new Error("Rol no encontrado");
-            }
-
-            const { rol } = await res.json();
-            return rol.id;
-        } catch (error) {
-            alert("⚠️ El rol ingresado no existe. Por favor verifica el nombre.");
-            //throw error; // opcional: relanza el error si quieres manejarlo más arriba
-        }
-    };
-
     // Maneja el envío del formulario para agregar una nueva localización
-    const handleSubmit = async (e) => {
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         if (!newName || !newDni || !newPhone || !newRol || !newImage) {
             setMessage("Debes completar todos los campos.");
@@ -107,9 +114,8 @@ const Trabajadores = () => {
         const imageData = base64.split(",")[1]; // elimina el encabezado data:image/png;base64,
 
         try {
-
-            // Buscar el ID del rol por su nombre
-            const idRol = await obtenerRolIdPorNombre(newRol); 
+            // No need to find rol by name anymore
+            const idRol = parseInt(newRol);
 
             // Crear el funcionario en la base de datos
             const res = await fetch("/api/users", {
@@ -120,10 +126,10 @@ const Trabajadores = () => {
 
             if (res.ok) {
                 const { staff } = await res.json();
-                // Enriquecer el objeto con el nombre del rol
+                const selectedRol = roles.find(r => r.id === idRol);
                 const staffConNombreRol = {
                     ...staff,
-                    nameRol: newRol, // ya se tiene en el input
+                    nameRol: selectedRol ? selectedRol.name : "Rol desconocido",
                 };
                 setFuncionarios((prev) => [staffConNombreRol, ...prev]);
                 setMessage("Funcionario agregado exitosamente.");
@@ -146,7 +152,7 @@ const Trabajadores = () => {
         }
     };
 
-    const formularioCompleto = newName.trim() !== "" && newDni.trim() !== "" && newPhone.trim() !== "" &&  newRol.trim() !== "" && newImage !== null;
+    const formularioCompleto = newName.trim() !== "" && newDni.trim() !== "" && newPhone.trim() !== "" &&  newRol !== "" && newImage !== null;
 
     return (
         <div className="flex flex-col items-center gap-6">
@@ -221,13 +227,22 @@ const Trabajadores = () => {
 
                             className="w-64"
                         />
-                        <Input
-                            label="Rol del funcionario"
-                            placeholder="Ej. Sargento"
-                            value={newRol}
-                            onChange={(e) => setNewRol(e.target.value)}
-                            className="w-64"
-                        />
+                        <div className="w-64">
+                          <label htmlFor="rol" className="block text-sm font-medium text-gray-700">Rol del funcionario</label>
+                          <select
+                              id="rol"
+                              value={newRol}
+                              onChange={(e) => setNewRol(e.target.value)}
+                              className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                          >
+                              <option value="">Seleccione un rol</option>
+                              {roles.map((rol) => (
+                                  <option key={rol.id} value={rol.id}>
+                                      {rol.name}
+                                  </option>
+                              ))}
+                          </select>
+                        </div>
                         <div className="w-64">
                             <label
                                 htmlFor="imagen"
@@ -241,7 +256,7 @@ const Trabajadores = () => {
                                 id="imagen"
                                 type="file"
                                 accept="image/*"
-                                onChange={(e) => setNewImage(e.target.files[0])}
+                                onChange={(e) => e.target.files && setNewImage(e.target.files[0])}
                                 className="hidden"
                             />
                         </div>
@@ -293,7 +308,7 @@ const Trabajadores = () => {
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-200">
-                                {funcionarios.map((trabajador) => (
+                                {funcionarios.filter(f => search === "" || f.name.toLowerCase().includes(search.toLowerCase())).map((trabajador) => (
                                     <tr key={trabajador.id} className="hover:bg-gray-50 transition-colors duration-200">
                                         <td className="px-4 py-3 text-sm text-gray-600">
                                         {trabajador.image ? (
@@ -371,4 +386,4 @@ const Trabajadores = () => {
     );
 };
 
-export default Trabajadores;
+export default TrabajadoresPage;

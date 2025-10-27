@@ -1,4 +1,4 @@
-const Configuracion = () => {
+const ConfiguracionPage = () => {
   return (
     <div className="p-4">
       <h2 className="text-xl font-bold mb-2">Configuracion</h2>
@@ -7,4 +7,4 @@ const Configuracion = () => {
   );
 };
 
-export default Configuracion;
+export default ConfiguracionPage;

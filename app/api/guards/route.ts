@@ -3,19 +3,20 @@ import { prisma } from "@/lib/prisma";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const month = searchParams.get("month");
-  const year = searchParams.get("year");
+  const date = searchParams.get("date");
   const locationId = searchParams.get("locationId");
 
-  if (!month || !year) {
+  if (!date) {
     return NextResponse.json(
-      { error: "Month and year are required" },
+      { error: "Date is required" },
       { status: 400 }
     );
   }
 
-  const startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
-  const endDate = new Date(parseInt(year), parseInt(month), 0);
+  const startDate = new Date(date);
+  startDate.setHours(0, 0, 0, 0);
+  const endDate = new Date(date);
+  endDate.setHours(23, 59, 59, 999);
 
   let whereClause: any = {
     assignedDate: {

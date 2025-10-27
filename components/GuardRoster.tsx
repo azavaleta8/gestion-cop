@@ -12,7 +12,7 @@ const getNearestWednesday = () => {
 };
 
 const GuardRoster = () => {
-  const [duties, setDuties] = useState<any[]>([]);
+  const [duties, setDuties] = useState([]);
   const [currentDate, setCurrentDate] = useState(getNearestWednesday());
   const [loading, setLoading] = useState(true);
   const [locations, setLocations] = useState<{id: number, name: string}[]>([]);
@@ -33,7 +33,7 @@ const GuardRoster = () => {
     fetchLocations();
   }, []);
 
-  const fetchDuties = async (date: Date, locationId: string) => {
+  const fetchDuties = async (date, locationId) => {
     setLoading(true);
     const dateString = date.toISOString().split('T')[0];
     let url = `/api/guards?date=${dateString}`;

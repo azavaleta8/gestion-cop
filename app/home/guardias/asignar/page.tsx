@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import Sidebar from '../../../components/Sidebar';
 
 const AsignarGuardiaPage = () => {
   const [locations, setLocations] = useState<{id: number, name: string}[]>([]);

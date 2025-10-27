@@ -342,37 +342,6 @@ const TrabajadoresPage = () => {
                                                 >
                                                     Ver Perfil
                                                 </Button>
-                                                <Button
-                                                    color="primary"
-                                                    className="px-4 py-2 text-white rounded transition flex items-center gap-2 bg-red-600 hover:bg-red-700"
-                                                    radius="sm"
-                                                    size="md"
-                                                    onPress={async () => {
-                                                        const confirmacion = window.confirm("¿Estás seguro de que quieres eliminar este funcionario?");
-                                                        if (!confirmacion) return;
-
-                                                        try {
-                                                            const encodedId = encode(trabajador.id.toString()); // Codifica el ID
-
-                                                            const res = await fetch(`/api/users/${encodedId}`, {
-                                                                method: "DELETE",
-                                                            });
-
-                                                            if (res.ok) {
-                                                                alert("Funcionario eliminado correctamente");
-                                                                // Se actualiza la lista de funcionarios sin necesidad de recargar la pagina
-                                                                setFuncionarios((prev) => prev.filter((f) => f.id !== trabajador.id));
-                                                            } else {
-                                                                alert("Error al eliminar el funcionario");
-                                                            }
-                                                        } catch (error) {
-                                                            console.error("Error al eliminar:", error);
-                                                            alert("Error de red al intentar eliminar");
-                                                        }
-                                                    }}
-                                                >
-                                                    Eliminar Funcionario
-                                                </Button>
                                             </div>
                                         </td>
                                     </tr>

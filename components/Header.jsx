@@ -24,6 +24,9 @@ export default function Header() {
         <Link href="/home/guardias" className="text-blue-600 hover:underline text-left">
             Gestión de Guardias
         </Link>
+        <Link href="/home/roles" className="text-blue-600 hover:underline text-left">
+            Gestión de Roles
+        </Link>
         {session?.user && (
           <>
             <span className="text-sm">

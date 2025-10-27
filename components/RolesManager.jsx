@@ -111,8 +111,7 @@ const RolesManager = () => {
                   </>
                 ) : (
                   <>
-                    <button onClick={() => setEditingRol({ ...rol })} className="text-indigo-600 hover:text-indigo-900 mr-4">Editar</button>
-                    <button onClick={() => handleDelete(rol.id)} className="text-red-600 hover:text-red-900">Eliminar</button>
+                    <button onClick={() => setEditingRol({ ...rol })} className="text-indigo-600 hover:text-indigo-900">Editar</button>
                   </>
                 )}
               </td>

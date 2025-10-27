@@ -3,30 +3,39 @@
 import {
   Card,
   Input,
+  Button,
 } from "@heroui/react";
 import { PlusIcon, PhotoIcon  } from "@heroicons/react/24/solid";
 import { useState, useEffect } from "react";
 import Loader from "@/components/Loader";
-import LocalizacionCard from "@/components/LocalizacionCard";
+import { useRouter } from "next/navigation";
 
-const Localizaciones = () => {
-    const [localizaciones, setLocalizaciones] = useState([]);
+interface Localizacion {
+    id: string;
+    name: string;
+    image: string;
+}
+
+const LocalizacionesPage = () => {
+    const [localizaciones, setLocalizaciones] = useState<Localizacion[]>([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
     const [message, setMessage] = useState('');
     const [showForm, setShowForm] = useState(false);
     const [newName, setNewName] = useState("");
-    const [newImage, setNewImage] = useState(null);
+    const [newImage, setNewImage] = useState<File | null>(null);
     
+    const router = useRouter();
+
     useEffect(() => {
         const fetchLocationsData = async () => {
             setLoading(true);
             try {
               const res = await fetch("/api/locations"); // Traemos todas las localizaciones
               if (res.ok) {
-                const { localizaciones } = await res.json(); // Las pasamos a json
-                if (localizaciones) {
-                    setLocalizaciones(localizaciones);
+                const { locations } = await res.json(); // Las pasamos a json
+                if (locations) {
+                    setLocalizaciones(Array.isArray(locations) ? locations : []);
                 } else {
                     setMessage('No se pudieron cargar los datos de las localizaciones.');
                 }
@@ -45,15 +54,21 @@ const Localizaciones = () => {
     }, []);
     
     // Transforma una imagen a base64
-    const fileToBase64 = file => new Promise((resolve, reject) => {
+    const fileToBase64 = (file: File): Promise<string> => new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result);
+      reader.onload = () => {
+        if (typeof reader.result === 'string') {
+            resolve(reader.result);
+        } else {
+            reject(new Error('Failed to convert file to base64 string'));
+        }
+      };
       reader.onerror = reject;
     });
 
     // Maneja el envío del formulario para agregar una nueva localización
-    const handleSubmit = async (e) => {
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         if (!newName || !newImage) {
             setMessage("Debes completar todos los campos.");
@@ -147,7 +162,7 @@ const Localizaciones = () => {
                                 id="imagen"
                                 type="file"
                                 accept="image/*"
-                                onChange={(e) => setNewImage(e.target.files[0])}
+                                onChange={(e) => e.target.files && setNewImage(e.target.files[0])}
                                 className="hidden"
                             />
                         </div>
@@ -161,49 +176,56 @@ const Localizaciones = () => {
                 )}
             </Card>
 
-            <div className="w-full">
+            <div className="w-full px-4 md:px-8 lg:px-16">
                 {loading ? (
-                <div className="flex flex-col items-center justify-center h-60 w-full">
-                    <Loader />
-                </div>
+                    <div className="flex flex-col items-center justify-center h-60 w-full">
+                        <Loader />
+                    </div>
                 ) : localizaciones.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-60 text-gray-500 w-full">
-                    <img
-                    src="/globe.svg"
-                    alt="Sin localizaciones"
-                    className="w-28 h-28 mb-2"
-                    style={{ objectFit: "contain" }}
-                    />
-                    <span>No hay localizaciones actualmente</span>
-                </div>
+                    <div className="flex flex-col items-center justify-center h-60 text-gray-500 w-full">
+                        <img
+                        src="/globe.svg"
+                        alt="Sin localizaciones"
+                        className="w-28 h-28 mb-2"
+                        style={{ objectFit: "contain" }}
+                        />
+                        <span>No hay localizaciones actualmente</span>
+                    </div>
                 ) : (
-                <div className="flex flex-wrap justify-center gap-6 w-full">
-                    {/* Muestra las localizaciones filtradas por búsqueda en caso de ingresar alguna ubicacion*/}
-                    {search === "" ? (
-                        localizaciones.map((localizacion) => (
-                            <LocalizacionCard key={localizacion.id} localizacion={localizacion} />
-                        ))
-                    ) : (
-                        localizaciones.filter((localizacion) =>
-                            localizacion.name.toLowerCase().includes(search.toLowerCase())
-                            ).length > 0 ? (
-                                localizaciones.filter((localizacion) =>
-                                    localizacion.name.toLowerCase().includes(search.toLowerCase())
-                                ).map((localizacion) => (
-                                    <LocalizacionCard key={localizacion.id} localizacion={localizacion} />
-                                    ))
-                                ) : (
-                                    <p className="text-center text-gray-500 mt-4">
-                                        No se encontró ninguna ubicación con ese nombre.
-                                    </p>
-                                )
-                        )
-                    }
-                </div>
+                    <table className="min-w-full bg-white mx-auto border border-gray-300 rounded-lg shadow-lg mt-8 overflow-hidden">
+                        <thead className="bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 uppercase text-sm tracking-wider">
+                            <tr>
+                                <th className="px-4 py-3 text-left">Imagen</th>
+                                <th className="px-4 py-3 text-left">Nombre</th>
+                                <th className="px-4 py-3 text-left">ID</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200">
+                        {localizaciones
+                            .filter(loc => search === "" || loc.name.toLowerCase().includes(search.toLowerCase()))
+                            .map((localizacion) => (
+                            <tr key={localizacion.id} className="hover:bg-gray-50 transition-colors duration-200" onClick={() => router.push(`/localizacion/${localizacion.id}`)}>
+                                <td className="px-4 py-3">
+                                    {localizacion.image ? (
+                                        <img
+                                        src={`data:image/png;base64,${localizacion.image}`}
+                                        alt={`Imagen de ${localizacion.name}`}
+                                        className="w-10 h-10 rounded-full object-cover"
+                                        />
+                                    ) : (
+                                        <div className="w-10 h-10 bg-gray-200 rounded-full" />
+                                    )}
+                                </td>
+                                <td className="px-4 py-3 text-sm text-gray-800 font-medium">{localizacion.name}</td>
+                                <td className="px-4 py-3 text-sm text-gray-600">{localizacion.id}</td>
+                            </tr>
+                        ))}
+                        </tbody>
+                    </table>
                 )}
             </div>
         </div>
     );
 };
 
-export default Localizaciones;
+export default LocalizacionesPage;

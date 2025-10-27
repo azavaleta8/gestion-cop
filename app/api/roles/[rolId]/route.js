@@ -41,3 +41,57 @@ export async function GET(req) {
     await prisma.$disconnect();
   }
 }
+
+export async function PUT(req) {
+  try {
+    const url = new URL(req.url);
+    const idRol = url.pathname.split('/').pop();
+    const { name } = await req.json();
+
+    if (!name) {
+      return new Response(JSON.stringify({ message: "El nombre es requerido" }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    const updatedRol = await prisma.rol.update({
+      where: { id: parseInt(idRol) },
+      data: { name },
+    });
+
+    return new Response(JSON.stringify(updatedRol), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  } catch (error) {
+    console.error('Error al actualizar el rol:', error);
+    return new Response(JSON.stringify({ message: 'Error al actualizar el rol', error: error.message }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
+export async function DELETE(req) {
+  try {
+    const url = new URL(req.url);
+    const idRol = url.pathname.split('/').pop();
+
+    await prisma.rol.delete({
+      where: { id: parseInt(idRol) },
+    });
+
+    return new Response(null, { status: 204 });
+  } catch (error) {
+    console.error('Error al eliminar el rol:', error);
+    return new Response(JSON.stringify({ message: 'Error al eliminar el rol', error: error.message }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  } finally {
+    await prisma.$disconnect();
+  }
+}

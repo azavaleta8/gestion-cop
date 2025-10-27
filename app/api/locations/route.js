@@ -1,13 +1,11 @@
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from "@/lib/prisma";
 
 // Busca todas las localizaciones
 export async function GET(req) {
   try {
-    const localizaciones = await prisma.location.findMany();
+    const locations = await prisma.location.findMany();
 
-    return new Response(JSON.stringify({ localizaciones }), {
+    return new Response(JSON.stringify({ locations }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     });
@@ -17,8 +15,6 @@ export async function GET(req) {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
     });
-  } finally {
-    await prisma.$disconnect();
   }
 }
 
@@ -45,7 +41,5 @@ export async function POST(req) {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
     });
-  } finally {
-    await prisma.$disconnect();
   }
 }

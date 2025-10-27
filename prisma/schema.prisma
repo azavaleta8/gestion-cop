@@ -24,6 +24,7 @@ model Rol {
   id    Int     @id @default(autoincrement())
   name  String  @unique
   staff Staff[]
+  duties GuardDuty[]
 }
 
 model Staff {
@@ -39,6 +40,8 @@ model Staff {
   rol   Rol    @relation(fields: [rolId], references: [id])
   locationId Int?
   location Location? @relation(fields: [locationId], references: [id])
+  assignedGuardDuties GuardDuty[] @relation("AssignedGuards")
+  actualGuardDuties   GuardDuty[] @relation("ActualGuards")
 }
 
 model Location {
@@ -46,4 +49,23 @@ model Location {
   name String @unique
   image String?
   staff Staff[] // Relación uno-a-muchos: una Location tiene muchos trabajadores
+  duties GuardDuty[]
+}
+
+model GuardDuty {
+  id              Int      @id @default(autoincrement())
+  assignedDate    DateTime
+
+  assignedStaffId Int
+  assignedStaff   Staff    @relation("AssignedGuards", fields: [assignedStaffId], references: [id])
+  actualStaffId   Int?
+  actualStaff     Staff?   @relation("ActualGuards", fields: [actualStaffId], references: [id])
+
+  locationId      Int
+  location        Location @relation(fields: [locationId], references: [id])
+  rolId           Int
+  rol             Rol      @relation(fields: [rolId], references: [id])
+
+  notes           String?
+  createdAt       DateTime @default(now())
 }

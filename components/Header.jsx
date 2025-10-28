@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { usePathname } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
+import LogoutButton from "./LogoutButton";
 
 export default function Header() {
   const { data: session } = useSession();
@@ -37,15 +38,7 @@ export default function Header() {
 
   const handleLogout = async () => {
     try {
-      // Si usas NextAuth.js
-      // await signOut({ callbackUrl: '/' });
-      
-      // O tu propia lógica de logout
-      console.log("Cerrando sesión...");
       setIsMenuOpen(false);
-      
-      // Redirigir al login
-      // window.location.href = '/auth/login';
     } catch (error) {
       console.error("Error al cerrar sesión:", error);
     }
@@ -86,7 +79,9 @@ export default function Header() {
                   
                   {/* Indicador activo */}
                   {isActive(item.href) && (
-                    <div className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-800" />
+                    <div
+                      className="absolute bottom-0 left-0 w-full h-0.5
+                        bg-blue-800" />
                   )}
                 </Link>
               ))}
@@ -95,32 +90,23 @@ export default function Header() {
             {/* Información de usuario y menú hamburguesa */}
             {session?.user && (
               <div className="flex items-center space-x-4" ref={menuRef}>
-                {/* Información del usuario */}
-                {/* <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
-                    <span className="text-white text-xs font-bold">
-                      {(session.user.name || session.user.dni)?.charAt(0).toUpperCase()}
-                    </span>
-                  </div>
-                  <span className="text-sm text-gray-700 font-medium">
-                    {session.user.name || session.user.dni}
-                  </span>
-                </div> */}
-                
-                {/* Separador */}
-                {/* <div className="h-6 w-px bg-gray-200" /> */}
-                
+
                 {/* Menú hamburguesa */}
                 <div className="relative">
                   <button
                     onClick={() => setIsMenuOpen(!isMenuOpen)}
-                    className="p-2 rounded-md hover:bg-gray-100 transition-colors border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
+                    className="p-2 rounded-md hover:bg-blue-800
+                      hover:cursor-pointer hover:text-white
+                      transition-colors border
+                      border-gray-200 focus:outline-none focus:ring-2
+                      focus:ring-blue-800 focus:ring-opacity-50
+                      "
                     aria-label="Menú de usuario"
                     aria-expanded={isMenuOpen}
                   >
                     {/* Icono de 3 barras (hamburguesa) */}
                     <svg 
-                      className="w-5 h-5 text-gray-600" 
+                      className="w-5 h-5 text-black-600" 
                       fill="none" 
                       stroke="currentColor" 
                       viewBox="0 0 24 24"
@@ -136,15 +122,24 @@ export default function Header() {
 
                   {/* Menú desplegable */}
                   {isMenuOpen && (
-                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 py-1 z-50">
-                      <div className="px-3 py-2 text-xs text-gray-500 border-b border-gray-100">
-                        <p className=" text-lg font-medium">{session.user.name}</p>
-                        <p className="text-lg font-medium text-gray-400">{session.user.dni}</p>
+                    <div
+                      className="absolute right-0 mt-8 w-48 bg-white
+                        rounded-md shadow-lg border border-gray-200
+                        z-50 ">
+                      <div
+                        className="px-3 py-2 text-xs text-gray-500 border-b
+                          border-gray-100">
+                        <p className=" text-lg font-medium">Perfil: Admin</p>
+                        <p className="text-lg font-medium">
+                          DNI: {session.user.dni}
+                        </p>
                       </div>
                       
                       <button
                         onClick={handleLogout}
-                        className="w-full text-left px-4 text-lg font-medium text-red-600 hover:bg-red-50 transition-colors flex items-center"
+                        className="w-full text-left px-4 text-lg font-medium
+                        text-red-600 hover:bg-red-50 transition-colors flex
+                        items-center"
                       >
                         <svg 
                           className="w-8 h-8 mr-2" 
@@ -156,10 +151,11 @@ export default function Header() {
                             strokeLinecap="round" 
                             strokeLinejoin="round" 
                             strokeWidth={2} 
-                            d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" 
+                            d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3
+                            3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" 
                           />
                         </svg>
-                        Cerrar Sesión
+                        <LogoutButton />
                       </button>
                     </div>
                   )}

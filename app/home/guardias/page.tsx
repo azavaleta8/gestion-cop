@@ -52,10 +52,14 @@ const GuardiasPage = () => {
   const [editingGuard, setEditingGuard] = useState<Guard | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
+
+
   const fetchGuardsForWeek = async () => {
     const startDate = new Date(currentWeekStart);
+    startDate.setHours(0, 0, 0, 0); // Asegura que la consulta empiece al inicio del día
     const endDate = new Date(startDate);
     endDate.setDate(startDate.getDate() + 6);
+    endDate.setHours(23, 59, 59, 999); // Asegura que cubra todo el último día
 
     try {
       const response = await fetch(`/api/guards?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`);
@@ -64,8 +68,8 @@ const GuardiasPage = () => {
       const dailyAssignmentsMap = new Map<string, Guard[]>();
 
       existingGuards.forEach((g: any) => {
-        const guardDate = new Date(g.assignedDate);
-        const dateString = new Date(guardDate.getUTCFullYear(), guardDate.getUTCMonth(), guardDate.getUTCDate()).toISOString().split('T')[0];
+        const dateString = g.assignedDate.split('T')[0];
+        const guardDate = new Date(dateString + 'T00:00:00');
         
         if (!dailyAssignmentsMap.has(dateString)) {
           dailyAssignmentsMap.set(dateString, []);
@@ -81,7 +85,13 @@ const GuardiasPage = () => {
       const newAssignments: DailyAssignments[] = Array(7).fill(null).map((_, i) => {
         const date = new Date(startDate);
         date.setDate(startDate.getDate() + i);
-        const dateString = date.toISOString().split('T')[0];
+        
+        // Build date string manually to avoid timezone conversion from toISOString()
+        const year = date.getFullYear();
+        const month = (date.getMonth() + 1).toString().padStart(2, '0');
+        const day = date.getDate().toString().padStart(2, '0');
+        const dateString = `${year}-${month}-${day}`;
+
         return {
           date,
           guards: dailyAssignmentsMap.get(dateString) || [],

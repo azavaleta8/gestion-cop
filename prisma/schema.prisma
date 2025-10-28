@@ -54,7 +54,7 @@ model Location {
 
 model GuardDuty {
   id              Int      @id @default(autoincrement())
-  assignedDate    DateTime
+  assignedDate    DateTime @db.Date
 
   assignedStaffId Int
   assignedStaff   Staff    @relation("AssignedGuards", fields: [assignedStaffId], references: [id])

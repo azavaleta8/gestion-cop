@@ -25,7 +25,11 @@ export async function GET(request: Request) {
         },
       },
       include: {
-        assignedStaff: true,
+        assignedStaff: {
+          include: {
+            rol: true,
+          },
+        },
         location: true,
       },
     });
@@ -51,19 +55,46 @@ export async function POST(request: Request) {
       );
     }
 
-    const newDuty = await prisma.guardDuty.create({
-      data: {
-        assignedDate: new Date(assignedDate),
-        assignedStaffId,
-        locationId,
-        rolId,
-        notes,
-      },
+    const date = new Date(assignedDate);
+    const startDate = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0);
+    const endDate = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59, 999);
+
+    const existingDuty = await prisma.guardDuty.findFirst({
+        where: {
+            assignedDate: {
+                gte: startDate,
+                lte: endDate,
+            }
+        }
     });
 
-    return NextResponse.json(newDuty, { status: 201 });
+    if (existingDuty) {
+        // If duty exists, update it
+        const updatedDuty = await prisma.guardDuty.update({
+            where: { id: existingDuty.id },
+            data: {
+                assignedStaffId,
+                locationId,
+                rolId,
+                notes,
+            },
+        });
+        return NextResponse.json(updatedDuty, { status: 200 });
+    } else {
+        // If no duty exists, create a new one
+        const newDuty = await prisma.guardDuty.create({
+            data: {
+                assignedDate: date,
+                assignedStaffId,
+                locationId,
+                rolId,
+                notes,
+            },
+        });
+        return NextResponse.json(newDuty, { status: 201 });
+    }
   } catch (error) {
-    console.error("Error creating guard duty:", error);
+    console.error("Error creating or updating guard duty:", error);
     return NextResponse.json(
       { error: "Internal Server Error" },
       { status: 500 }

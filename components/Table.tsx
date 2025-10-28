@@ -22,7 +22,7 @@ interface TableProps<T> {
   onRowClick?: (item: T) => void;
 }
 
-const Table = <T extends { id: string }>({
+const Table = <T extends { id: number | string }>({
   columns,
   data,
   loading,

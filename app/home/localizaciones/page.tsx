@@ -122,6 +122,9 @@ const LocalizacionesPage = () => {
 
     return (
         <>
+
+            <h1 className="text-2xl font-bold mb-5">Servicios</h1>
+
             <div className="flex justify-between items-center mb-6">
                 <div className="w-1/3">
                     <SearchBar

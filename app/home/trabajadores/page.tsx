@@ -1,15 +1,14 @@
 "use client";
 
-import {
-  Card,
-  Input,
-  Button
-} from "@heroui/react";
-import { PlusIcon, PhotoIcon, UserCircleIcon  } from "@heroicons/react/24/solid";
+import { PlusIcon, PhotoIcon, UserCircleIcon } from "@heroicons/react/24/solid";
 import { useState, useEffect } from "react";
-import Loader from "@/components/Loader";
 import { useRouter } from 'next/navigation';
 import { encode } from "js-base64";
+import { Input, Button } from "@heroui/react";
+import useDebounce from "@/lib/hooks/useDebounce";
+import SearchBar from "@/components/SearchBar";
+import Modal from "@/components/Modal";
+import Table from "@/components/Table";
 
 interface Rol {
     id: number;
@@ -21,9 +20,8 @@ interface Funcionario {
     name: string;
     dni: string;
     phone: string;
-    rolId: number;
+    rol: Rol;
     image: string;
-    nameRol: string;
     day?: string;
     total_hours?: number;
     last_guard?: string;
@@ -41,51 +39,56 @@ const TrabajadoresPage = () => {
     const [newImage, setNewImage] = useState<File | null>(null);
     const [funcionarios, setFuncionarios] = useState<Funcionario[]>([]);
     const [roles, setRoles] = useState<Rol[]>([]);
+    const [totalFuncionarios, setTotalFuncionarios] = useState(0);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage, setItemsPerPage] = useState(10);
+
     const router = useRouter();
+    const debouncedSearch = useDebounce(search, 500);
 
-    useEffect(() => {
-        const fetchStaffData = async () => {
-            setLoading(true);
-            try {
-            // 1. Obtener funcionarios y roles
-            const res = await fetch("/api/users");
-            const rolesRes = await fetch("/api/roles");
+    const fetchStaffData = async () => {
+        setLoading(true);
+        try {
+            const params = new URLSearchParams({
+                page: String(currentPage),
+                limit: String(itemsPerPage),
+                search: debouncedSearch,
+            });
+            const [staffRes, rolesRes] = await Promise.all([
+                fetch(`/api/users?${params.toString()}`),
+                fetch("/api/roles")
+            ]);
 
-            if (!res.ok || !rolesRes.ok) {
+            if (!staffRes.ok || !rolesRes.ok) {
                 setMessage("Error al cargar los datos.");
                 return;
             }
 
-            const { funcionarios } = await res.json();
+            const { funcionarios, total } = await staffRes.json();
             const { roles } = await rolesRes.json();
 
-            if (!funcionarios || !roles) {
+            if (funcionarios && total !== undefined && roles) {
+                setFuncionarios(Array.isArray(funcionarios) ? funcionarios : []);
+                setTotalFuncionarios(total);
+                setRoles(Array.isArray(roles) ? roles : []);
+            } else {
                 setMessage("No se pudieron cargar los datos.");
-                return;
             }
+        } catch (error) {
+            setMessage("Error de red al cargar los datos.");
+            console.error("Failed to fetch data", error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
-            // 2. Crear un mapa de roles por ID
-            const rolesMap = new Map(roles.map((rol: Rol) => [rol.id, rol.name]));
-
-            // 3. Enriquecer cada funcionario con nameRol
-            const funcionariosConNombreRol = funcionarios.map((f: Funcionario) => ({
-                ...f,
-                nameRol: rolesMap.get(f.rolId) || "Rol desconocido"
-            }));
-
-            setFuncionarios(funcionariosConNombreRol);
-            setRoles(roles || []);
-            } catch (error) {
-                setMessage("Error de red al cargar los datos.");
-                console.error("Failed to fetch staff data", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
+    useEffect(() => {
         fetchStaffData();
-    }, []);
+    }, [currentPage, itemsPerPage, debouncedSearch]);
 
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [debouncedSearch]);
     
     // Transforma una imagen a base64
     const fileToBase64 = (file: File): Promise<string> => new Promise((resolve, reject) => {
@@ -104,20 +107,19 @@ const TrabajadoresPage = () => {
     // Maneja el envío del formulario para agregar una nueva localización
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        if (!newName || !newDni || !newPhone || !newRol || !newImage) {
-            setMessage("Debes completar todos los campos.");
+        if (!newName || !newDni || !newPhone || !newRol) {
+            setMessage("Debes completar todos los campos obligatorios.");
             return;
         }
 
-        // Convierte la imagen a base64 para enviarla a la API
-        const base64 = await fileToBase64(newImage);
-        const imageData = base64.split(",")[1]; // elimina el encabezado data:image/png;base64,
+        let imageData = null;
+        if (newImage) {
+            const base64 = await fileToBase64(newImage);
+            imageData = base64.split(",")[1];
+        }
 
         try {
-            // No need to find rol by name anymore
             const idRol = parseInt(newRol);
-
-            // Crear el funcionario en la base de datos
             const res = await fetch("/api/users", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -125,13 +127,6 @@ const TrabajadoresPage = () => {
             });
 
             if (res.ok) {
-                const { staff } = await res.json();
-                const selectedRol = roles.find(r => r.id === idRol);
-                const staffConNombreRol = {
-                    ...staff,
-                    nameRol: selectedRol ? selectedRol.name : "Rol desconocido",
-                };
-                setFuncionarios((prev) => [staffConNombreRol, ...prev]);
                 setMessage("Funcionario agregado exitosamente.");
                 setNewName("");
                 setNewDni("");
@@ -139,6 +134,7 @@ const TrabajadoresPage = () => {
                 setNewRol("");
                 setNewImage(null);
                 setShowForm(false);
+                fetchStaffData(); // Recargar datos
             } else if (res.status === 409) {
                 alert("⚠️ El DNI ya está registrado. No se puede repetir.");
                 setMessage("⚠️ El DNI ya está registrado. No se puede repetir.");
@@ -152,26 +148,58 @@ const TrabajadoresPage = () => {
         }
     };
 
-    const formularioCompleto = newName.trim() !== "" && newDni.trim() !== "" && newPhone.trim() !== "" &&  newRol !== "" && newImage !== null;
+    const formularioCompleto = newName.trim() !== "" && newDni.trim() !== "" && newPhone.trim() !== "" &&  newRol !== "";
+
+    const columns: { header: string; accessor: keyof Funcionario; render?: (item: Funcionario) => React.ReactNode }[] = [
+        {
+            header: 'Foto',
+            accessor: 'image',
+            render: (item: Funcionario) => (
+                item.image ? (
+                    <img
+                        src={`data:image/png;base64,${item.image}`}
+                        alt={`Foto de ${item.name}`}
+                        className="w-10 h-10 rounded-full object-cover"
+                    />
+                ) : (
+                    <UserCircleIcon className="w-10 h-10 text-gray-400" />
+                )
+            )
+        },
+        { header: 'Nombre', accessor: 'name' },
+        { header: 'Cédula', accessor: 'dni' },
+        { header: 'Teléfono', accessor: 'phone' },
+        { header: 'Cargo', accessor: 'rol', render: (item: Funcionario) => item.rol.name },
+        { header: 'Opciones', accessor: 'id', render: (item: Funcionario) => (
+            <Button
+                color="primary"
+                className="px-4 py-2 text-white rounded transition flex items-center gap-2 bg-green-600 hover:bg-green-700"
+                radius="sm"
+                size="md"
+                onPress={() => {
+                    const encodedId = encode(item.id.toString());
+                    router.push(`/trabajador/${encodedId}`);
+                }}
+            >
+                Ver Perfil
+            </Button>
+        )}
+    ];
 
     return (
-        <div className="flex flex-col items-center gap-6">
-            <Card className="p-4 w-[22rem] items-center gap-2">
-                <h2 className="text-2xl font-bold mb-2">Funcionarios</h2>
-
-                <Input
-                  label="Buscar Funcionario"
-                  placeholder="Nombre"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="w-64"
-                />
-                
-                {/* Botón para agregar un nuevo trabajador */}
-                <button className={`mt-4 px-4 py-2 text-white rounded transition flex items-center gap-2 ${
+        <>
+            <h1 className="text-2xl font-bold mb-5">Funcionarios</h1>
+  
+            <div className="flex justify-between items-center mb-6">
+                <div className="w-1/3">
+                    <SearchBar
+                        placeholder="Buscar por nombre o cédula..."
+                        onSearchChange={setSearch}
+                    />
+                </div>
+                <button className={`px-4 py-2 text-white rounded transition flex items-center gap-2 ${
                     showForm ? "bg-red-600 hover:bg-red-700" : "bg-green-600 hover:bg-green-700"
                 }`}
-
                     onClick={() => {
                         if (showForm) {
                             setNewName("");
@@ -188,170 +216,107 @@ const TrabajadoresPage = () => {
                         <>
                             <PlusIcon className="w-5 h-5" />
                             Agregar nuevo funcionario
-                        </>)}
+                        </>
+                    )}
                 </button>
-
-                {showForm && (
-                    // Formulario para agregar nueva localización
-                    <form
-                        onSubmit={handleSubmit}
-                        className="mt-4 flex flex-col gap-4 w-full items-center"
-                    >
-                        <Input
-                            label="Nombre del funcionario"
-                            placeholder="Ej. Pedro Pérez"
-                            value={newName}
-                            onChange={(e) => setNewName(e.target.value)}
-                            className="w-64"
-                        />
-                        <Input
-                            type="text"
-                            label="Cedula del funcionario"
-                            placeholder="Ej. 12345678"
-                            value={newDni}
-                            onChange={(e) => {
-                                const soloNumeros = e.target.value.replace(/\D/g, '');
-                                setNewDni(soloNumeros);
-                            }}
-                            className="w-64"
-                        />
-                        <Input
-                            type="text"
-                            label="Telefono del funcionario"
-                            placeholder="Ej. 04123456789"
-                            value={newPhone}
-                            onChange={(e) => {
-                                const soloNumeros = e.target.value.replace(/\D/g, '');
-                                setNewPhone(soloNumeros);
-                            }}
-
-                            className="w-64"
-                        />
-                        <div className="w-64">
-                          <label htmlFor="rol" className="block text-sm font-medium text-gray-700">Rol del funcionario</label>
-                          <select
-                              id="rol"
-                              value={newRol}
-                              onChange={(e) => setNewRol(e.target.value)}
-                              className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-                          >
-                              <option value="">Seleccione un rol</option>
-                              {roles.map((rol) => (
-                                  <option key={rol.id} value={rol.id}>
-                                      {rol.name}
-                                  </option>
-                              ))}
-                          </select>
-                        </div>
-                        <div className="w-64">
-                            <label
-                                htmlFor="imagen"
-                                className="cursor-pointer px-4 py-2 bg-blue-400 text-white rounded hover:bg-blue-500 transition flex justify-between items-center"
-                            >
-                                <span>{newImage ? "Imagen seleccionada" : "Seleccionar imagen"}</span>
-                                <PhotoIcon className="w-5 h-5" />
-                            </label>
-
-                            <input
-                                id="imagen"
-                                type="file"
-                                accept="image/*"
-                                onChange={(e) => e.target.files && setNewImage(e.target.files[0])}
-                                className="hidden"
-                            />
-                        </div>
-                        <button
-                        type="submit"
-                        disabled={!formularioCompleto}
-                        className={`px-4 py-2 rounded text-white transition ${
-                            formularioCompleto
-                            ? "bg-blue-600 hover:bg-blue-700"
-                            : "bg-gray-400 cursor-not-allowed"
-                        }`}
-                        >
-                            Guardar Funcionario
-                        </button>
-                    </form>
-                )}
-            </Card>
-
-            <div className="w-full">
-                {loading ? (
-                <div className="flex flex-col items-center justify-center h-60 w-full">
-                    <Loader />
-                </div>
-                ) : funcionarios.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-60 text-gray-500 w-full">
-                        <img
-                        src="/globe.svg"
-                        alt="Sin funcionarios"
-                        className="w-28 h-28 mb-2"
-                        style={{ objectFit: "contain" }}
-                        />
-                        <span>No hay funcionarios actualmente</span>
-                    </div>
-                    ) : (
-                        <div className="flex flex-wrap justify-center gap-6 w-full">
-                            {/* Tabla de los funcionarios */}
-                            <table className="min-w-[80%] bg-white mx-auto border border-gray-300 rounded-lg shadow-lg mt-8 overflow-hidden">
-                                <thead className="bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 uppercase text-sm tracking-wider">
-                                    <tr>
-                                        <th className="px-4 py-3 text-left">Foto</th>
-                                        <th className="px-4 py-3 text-left">Nombre</th>
-                                        <th className="px-4 py-3 text-left">Cédula</th>
-                                        <th className="px-4 py-3 text-left">Teléfono</th>
-                                        <th className="px-4 py-3 text-left">Cargo</th>
-                                        <th className="px-4 py-3 text-left">Guardia</th>
-                                        <th className="px-4 py-3 text-left">Horas de guardias</th>
-                                        <th className="px-4 py-3 text-left">Última Guardia</th>
-                                        <th className="px-4 py-3 text-left">Opciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-200">
-                                {funcionarios.filter(f => search === "" || f.name.toLowerCase().includes(search.toLowerCase())).map((trabajador) => (
-                                    <tr key={trabajador.id} className="hover:bg-gray-50 transition-colors duration-200">
-                                        <td className="px-4 py-3 text-sm text-gray-600">
-                                        {trabajador.image ? (
-                                            <img
-                                            src={`data:image/png;base64,${trabajador.image}`} // Transformamos la imagen a base64
-                                            alt={`Foto de ${trabajador.name}`}
-                                            className="w-10 h-10 rounded-full object-cover"
-                                            />
-                                        ) : (
-                                            <UserCircleIcon className="w-10 h-10 text-gray-400" />
-                                        )}
-                                        </td>
-                                        <td className="px-4 py-3 text-sm text-gray-800 font-medium">{trabajador.name}</td>
-                                        <td className="px-4 py-3 text-sm text-gray-600">{trabajador.dni}</td>
-                                        <td className="px-4 py-3 text-sm text-gray-600">{trabajador.phone}</td>
-                                        <td className="px-4 py-3 text-sm text-gray-600">{trabajador.nameRol}</td>
-                                        <td className="px-4 py-3 text-sm text-gray-600">{trabajador.day ?? "No tiene día asignado"}</td>
-                                        <td className="px-4 py-3 text-sm text-gray-600">{trabajador.total_hours}</td>
-                                        <td className="px-4 py-3 text-sm text-gray-600">{trabajador.last_guard ?? "Nunca ha realizado una guardia"}</td>
-                                        <td className="px-4 py-3 text-sm text-gray-600">
-                                            <div className="flex gap-2 mt-4">
-                                                <Button
-                                                    color="primary"
-                                                    className="px-4 py-2 text-white rounded transition flex items-center gap-2 bg-green-600 hover:bg-green-700"
-                                                    radius="sm"
-                                                    size="md"
-                                                    onPress={() => {
-                                                        const encodedId = encode(trabajador.id.toString());
-                                                        router.push(`/trabajador/${encodedId}`);
-                                                    }}
-                                                >
-                                                    Ver Perfil
-                                                </Button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
-                                </tbody>
-                            </table>
-                        </div>
-                )}
             </div>
-        </div>
+
+            <Modal
+                isOpen={showForm}
+                onClose={() => setShowForm(false)}
+                title="Agregar Nuevo Funcionario"
+            >
+                <form
+                    onSubmit={handleSubmit}
+                    className="flex flex-col gap-4"
+                >
+                    <Input
+                        label="Nombre del funcionario"
+                        placeholder="Ej. Pedro Pérez"
+                        value={newName}
+                        onChange={(e) => setNewName(e.target.value)}
+                    />
+                    <Input
+                        type="text"
+                        label="Cédula del funcionario"
+                        placeholder="Ej. 12345678"
+                        value={newDni}
+                        onChange={(e) => {
+                            const soloNumeros = e.target.value.replace(/\D/g, '');
+                            setNewDni(soloNumeros);
+                        }}
+                    />
+                    <Input
+                        type="text"
+                        label="Teléfono del funcionario"
+                        placeholder="Ej. 04123456789"
+                        value={newPhone}
+                        onChange={(e) => {
+                            const soloNumeros = e.target.value.replace(/\D/g, '');
+                            setNewPhone(soloNumeros);
+                        }}
+                    />
+                    <div>
+                        <label htmlFor="rol" className="block text-sm font-medium text-gray-700">Rol del funcionario</label>
+                        <select
+                            id="rol"
+                            value={newRol}
+                            onChange={(e) => setNewRol(e.target.value)}
+                            className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                        >
+                            <option value="">Seleccione un rol</option>
+                            {roles.map((rol) => (
+                                <option key={rol.id} value={rol.id}>
+                                    {rol.name}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                    <div>
+                        <label
+                            htmlFor="imagen"
+                            className="cursor-pointer px-4 py-2 bg-blue-400 text-white rounded hover:bg-blue-500 transition flex justify-between items-center"
+                        >
+                            <span>{newImage ? "Imagen seleccionada" : "Seleccionar imagen"}</span>
+                            <PhotoIcon className="w-5 h-5" />
+                        </label>
+                        <input
+                            id="imagen"
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => e.target.files && setNewImage(e.target.files[0])}
+                            className="hidden"
+                        />
+                    </div>
+                    <button
+                    type="submit"
+                    disabled={!formularioCompleto}
+                    className={`px-4 py-2 rounded text-white transition ${
+                        formularioCompleto
+                        ? "bg-blue-600 hover:bg-blue-700"
+                        : "bg-gray-400 cursor-not-allowed"
+                    }`}
+                    >
+                        Guardar Funcionario
+                    </button>
+                </form>
+            </Modal>
+
+            <Table
+                columns={columns}
+                data={funcionarios}
+                loading={loading}
+                totalItems={totalFuncionarios}
+                currentPage={currentPage}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setCurrentPage}
+                onItemsPerPageChange={setItemsPerPage}
+                onRowClick={(item) => {
+                    const encodedId = encode(item.id.toString());
+                    router.push(`/trabajador/${encodedId}`);
+                }}
+            />
+        </>
     );
 };
 

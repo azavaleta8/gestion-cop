@@ -1,28 +1,54 @@
-import { PrismaClient } from '@prisma/client';
+import { prisma } from "@/lib/prisma";
 
-const prisma = new PrismaClient();
-
-// Busca todos los trabajadores
+// Busca todos los trabajadores con paginación y búsqueda
 export async function GET(req) {
   try {
-    const funcionarios = await prisma.staff.findMany({
-      orderBy: {
-        total_hours: 'asc'
-      }
-    });
+    const { searchParams } = new URL(req.url);
+    const page = parseInt(searchParams.get('page') || '1', 10);
+    const limit = parseInt(searchParams.get('limit') || '10', 10);
+    const search = searchParams.get('search') || '';
 
-    return new Response(JSON.stringify({ funcionarios }), {
+    const skip = (page - 1) * limit;
+
+    const where = search
+      ? {
+          OR: [
+            { name: { contains: search, mode: 'insensitive' } },
+            { dni: { contains: search, mode: 'insensitive' } },
+          ],
+        }
+      : {};
+
+    const [funcionarios, total] = await prisma.$transaction([
+      prisma.staff.findMany({
+        where,
+        skip,
+        take: limit,
+        include: {
+          rol: true, // Incluir la relación con Rol
+        },
+        orderBy: {
+          name: 'asc',
+        },
+      }),
+      prisma.staff.count({ where }),
+    ]);
+
+    return new Response(JSON.stringify({ 
+      funcionarios, 
+      total,
+      page,
+      limit,
+    }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     });
   } catch (error) {
-    console.error('Error al obtener funcionario:', error);
-    return new Response(JSON.stringify({ message: 'Error al obtener funcionario', error: error.message }), {
+    console.error('Error al obtener funcionarios:', error);
+    return new Response(JSON.stringify({ message: 'Error al obtener funcionarios', error: error.message }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
     });
-  } finally {
-    await prisma.$disconnect();
   }
 }
 
@@ -68,7 +94,5 @@ export async function POST(req) {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
     });
-  } finally {
-    await prisma.$disconnect();
   }
 }

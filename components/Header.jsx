@@ -1,25 +1,55 @@
 "use client";
 
 import Link from "next/link";
-import LogoutButton from "./LogoutButton";
 import { useSession } from "next-auth/react";
 import { usePathname } from "next/navigation";
+import { useState, useRef, useEffect } from "react";
 
 export default function Header() {
   const { data: session } = useSession();
   const pathname = usePathname();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuRef = useRef(null);
 
   // Función para verificar si la ruta está activa
   const isActive = (path) => {
     return pathname?.startsWith(path);
   };
 
+  // Cerrar menú al hacer click fuera
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setIsMenuOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   const navItems = [
-    { href: "/home/localizaciones", label: "Localizaciones" },
-    { href: "/home/trabajadores", label: "Trabajadores" },
-    { href: "/home/guardias", label: "Gestión de Guardias" },
-    { href: "/home/roles", label: "Gestión de Roles" },
+    { href: "/home/localizaciones", label: "Servicios" },
+    { href: "/home/trabajadores", label: "Funcionarios" },
+    { href: "/home/guardias", label: "Guardias" },
+    { href: "/home/roles", label: "Cargos" },
   ];
+
+  const handleLogout = async () => {
+    try {
+      // Si usas NextAuth.js
+      // await signOut({ callbackUrl: '/' });
+      
+      // O tu propia lógica de logout
+      console.log("Cerrando sesión...");
+      setIsMenuOpen(false);
+      
+      // Redirigir al login
+      // window.location.href = '/auth/login';
+    } catch (error) {
+      console.error("Error al cerrar sesión:", error);
+    }
+  };
 
   return (
     <header className="w-full bg-white border-b border-gray-100 shadow-sm">
@@ -29,41 +59,44 @@ export default function Header() {
           <div className="flex items-center">
             <Link 
               href="/" 
-              className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent"
+              className="text-xl font-bold bg-clip-text text-blue-800"
             >
               CENTRO DE OPERACIONES POLICIALES
             </Link>
           </div>
 
-          {/* Navegación */}
-          <nav className="flex items-center space-x-1">
-            {navItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`
-                  relative px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200
-                  ${isActive(item.href)
-                    ? "text-blue-700 bg-blue-50 shadow-sm"
-                    : "text-gray-600 hover:text-blue-600 hover:bg-gray-50"
-                  }
-                `}
-              >
-                {item.label}
-                
-                {/* Indicador activo */}
-                {isActive(item.href) && (
-                  <div className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600"></div>
-                )}
-              </Link>
-            ))}
-          </nav>
+          <div className="flex items-center">
+            {/* Navegación */}
+            <nav className="flex items-center space-x-1 mr-8">
+              {navItems.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`
+                    relative px-4 py-2 rounded-lg text-lg font-bold
+                    transition-all duration-200
+                    ${isActive(item.href)
+                      ? "text-blue-800 cursor-default"
+                      : `text-gray-800 hover:text-white hover:bg-blue-800
+                        hover:shadow-md hover:rounded-full`
+                    }
+                  `}
+                >
+                  {item.label}
+                  
+                  {/* Indicador activo */}
+                  {isActive(item.href) && (
+                    <div className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-800" />
+                  )}
+                </Link>
+              ))}
+            </nav>
 
-          {/* Información de usuario */}
-          <div className="flex items-center space-x-4">
+            {/* Información de usuario y menú hamburguesa */}
             {session?.user && (
-              <>
-                <div className="flex items-center space-x-3">
+              <div className="flex items-center space-x-4" ref={menuRef}>
+                {/* Información del usuario */}
+                {/* <div className="flex items-center space-x-3">
                   <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
                     <span className="text-white text-xs font-bold">
                       {(session.user.name || session.user.dni)?.charAt(0).toUpperCase()}
@@ -72,10 +105,66 @@ export default function Header() {
                   <span className="text-sm text-gray-700 font-medium">
                     {session.user.name || session.user.dni}
                   </span>
+                </div> */}
+                
+                {/* Separador */}
+                {/* <div className="h-6 w-px bg-gray-200" /> */}
+                
+                {/* Menú hamburguesa */}
+                <div className="relative">
+                  <button
+                    onClick={() => setIsMenuOpen(!isMenuOpen)}
+                    className="p-2 rounded-md hover:bg-gray-100 transition-colors border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
+                    aria-label="Menú de usuario"
+                    aria-expanded={isMenuOpen}
+                  >
+                    {/* Icono de 3 barras (hamburguesa) */}
+                    <svg 
+                      className="w-5 h-5 text-gray-600" 
+                      fill="none" 
+                      stroke="currentColor" 
+                      viewBox="0 0 24 24"
+                    >
+                      <path 
+                        strokeLinecap="round" 
+                        strokeLinejoin="round" 
+                        strokeWidth={2} 
+                        d="M4 6h16M4 12h16M4 18h16" 
+                      />
+                    </svg>
+                  </button>
+
+                  {/* Menú desplegable */}
+                  {isMenuOpen && (
+                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 py-1 z-50">
+                      <div className="px-3 py-2 text-xs text-gray-500 border-b border-gray-100">
+                        <p className=" text-lg font-medium">{session.user.name}</p>
+                        <p className="text-lg font-medium text-gray-400">{session.user.dni}</p>
+                      </div>
+                      
+                      <button
+                        onClick={handleLogout}
+                        className="w-full text-left px-4 text-lg font-medium text-red-600 hover:bg-red-50 transition-colors flex items-center"
+                      >
+                        <svg 
+                          className="w-8 h-8 mr-2" 
+                          fill="none" 
+                          stroke="currentColor" 
+                          viewBox="0 0 24 24"
+                        >
+                          <path 
+                            strokeLinecap="round" 
+                            strokeLinejoin="round" 
+                            strokeWidth={2} 
+                            d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" 
+                          />
+                        </svg>
+                        Cerrar Sesión
+                      </button>
+                    </div>
+                  )}
                 </div>
-                <div className="h-6 w-px bg-gray-200"></div>
-                <LogoutButton />
-              </>
+              </div>
             )}
           </div>
         </div>

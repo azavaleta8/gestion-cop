@@ -53,7 +53,7 @@ export default function Header() {
                 
                 {/* Indicador activo */}
                 {isActive(item.href) && (
-                  <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-blue-600 rounded-full"></div>
+                  <div className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600"></div>
                 )}
               </Link>
             ))}

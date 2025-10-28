@@ -12,6 +12,12 @@ export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef(null);
 
+
+  // Si no hay sesión, no renderizar nada
+  if (!session) {
+    return null;
+  }
+  
   // Función para verificar si la ruta está activa
   const isActive = (path) => {
     return pathname?.startsWith(path);

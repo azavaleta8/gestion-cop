@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import AssignGuardModal from '@/components/AssignGuardModal';
-import { UserCircleIcon, CalendarIcon, MapPinIcon } from '@heroicons/react/24/outline';
+import { UserCircleIcon, CalendarIcon, MapPinIcon, DevicePhoneMobileIcon, IdentificationIcon } from '@heroicons/react/24/outline';
 
 // Helper to get the start of the week (Tuesday)
 const getStartOfWeek = (date: Date) => {
@@ -30,6 +30,7 @@ interface Staff {
     dni: string;
     rol: Rol;
     image?: string;
+    phone?: string;
 }
 
 interface Assignment {
@@ -167,25 +168,48 @@ const GuardiasPage = () => {
                 </div>
                 
                 {assignment.staff && assignment.location ? (
-                  <div className="w-full md:w-auto flex flex-col md:flex-row md:items-center gap-6 bg-gray-50 p-4 rounded-lg">
-                    <div className="flex items-center gap-4">
+                  <div className="w-full grid grid-cols-1 md:grid-cols-5 items-center gap-4 bg-gray-50 p-4 rounded-lg">
+                    {/* Col 1: Image */}
+                    <div className="flex items-center justify-center md:justify-start">
                       {assignment.staff.image ? (
                           <img src={`data:image/png;base64,${assignment.staff.image}`} alt={assignment.staff.name} className="w-12 h-12 rounded-full object-cover" />
                       ) : (
                           <UserCircleIcon className="w-12 h-12 text-gray-400" />
                       )}
-                      <div>
-                          <p className="font-semibold text-gray-900">{assignment.staff.name}</p>
-                          <p className="text-sm text-gray-600">{assignment.staff.rol.name}</p>
-                      </div>
                     </div>
+
+                    {/* Col 2: Name & Role */}
+                    <div>
+                      <p className="font-semibold text-gray-900">{assignment.staff.name}</p>
+                      <p className="text-sm text-gray-600">{assignment.staff.rol.name}</p>
+                    </div>
+
+                    {/* Col 3: DNI & Phone */}
+                    <div>
+                      <div className="flex items-center gap-2 text-sm text-gray-500">
+                        <IdentificationIcon className="w-4 h-4" />
+                        <span>{assignment.staff.dni}</span>
+                      </div>
+                      {assignment.staff.phone && (
+                        <div className="flex items-center gap-2 text-sm text-gray-500">
+                            <DevicePhoneMobileIcon className="w-4 h-4" />
+                            <span>{assignment.staff.phone}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Col 4: Location */}
                     <div className="flex items-center gap-2 text-gray-700">
                         <MapPinIcon className="w-5 h-5" />
                         <p className="font-medium">{assignment.location.name}</p>
                     </div>
-                    <button onClick={() => openAssignModal(assignment.date)} className="ml-auto px-4 py-2 bg-yellow-500 text-white rounded-md text-sm font-semibold hover:bg-yellow-600">
-                      Reasignar
-                    </button>
+
+                    {/* Col 5: Button */}
+                    <div className="flex justify-center md:justify-end">
+                      <button onClick={() => openAssignModal(assignment.date)} className="px-4 py-2 bg-yellow-500 text-white rounded-md text-sm font-semibold hover:bg-yellow-600">
+                        Reasignar
+                      </button>
+                    </div>
                   </div>
                 ) : (
                   <button onClick={() => openAssignModal(assignment.date)} className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 flex items-center gap-2">

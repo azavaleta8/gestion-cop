@@ -1,15 +1,14 @@
 "use client";
 
-import {
-  Button,
-  Input
-} from "@heroui/react";
-import { PlusIcon, PhotoIcon  } from "@heroicons/react/24/solid";
+import { PlusIcon, PhotoIcon } from "@heroicons/react/24/solid";
 import { useState, useEffect } from "react";
-import Loader from "@/components/Loader";
 import { useRouter } from "next/navigation";
+import { Input } from "@heroui/react";
 import SearchBar from "@/components/SearchBar";
 import Modal from "@/components/Modal";
+import Table from "@/components/Table";
+import Loader from "@/components/Loader";
+import useDebounce from "@/lib/hooks/useDebounce";
 
 interface Localizacion {
     id: string;
@@ -26,33 +25,49 @@ const LocalizacionesPage = () => {
     const [newName, setNewName] = useState("");
     const [newImage, setNewImage] = useState<File | null>(null);
     
+    const [totalLocalizaciones, setTotalLocalizaciones] = useState(0);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage, setItemsPerPage] = useState(10);
+    
     const router = useRouter();
+    const debouncedSearch = useDebounce(search, 500);
+
+    const fetchLocationsData = async () => {
+        setLoading(true);
+        try {
+          const params = new URLSearchParams({
+              page: String(currentPage),
+              limit: String(itemsPerPage),
+              search: debouncedSearch,
+          });
+          const res = await fetch(`/api/locations?${params.toString()}`);
+          if (res.ok) {
+            const { locations, total } = await res.json(); 
+            if (locations) {
+                setLocalizaciones(Array.isArray(locations) ? locations : []);
+                setTotalLocalizaciones(total);
+            } else {
+                setMessage('No se pudieron cargar los datos de las localizaciones.');
+            }
+          } else {
+            setMessage('Error al cargar los datos de las localizaciones.');
+          }
+
+        } catch (error) {
+          setMessage('Error de red al cargar los datos de las localizaciones.');
+          console.error('Failed to fetch location data', error);
+        } finally {
+          setLoading(false);
+        }
+    };
 
     useEffect(() => {
-        const fetchLocationsData = async () => {
-            setLoading(true);
-            try {
-              const res = await fetch("/api/locations"); // Traemos todas las localizaciones
-              if (res.ok) {
-                const { locations } = await res.json(); // Las pasamos a json
-                if (locations) {
-                    setLocalizaciones(Array.isArray(locations) ? locations : []);
-                } else {
-                    setMessage('No se pudieron cargar los datos de las localizaciones.');
-                }
-              } else {
-                setMessage('Error al cargar los datos de las localizaciones.');
-              }
-
-            } catch (error) {
-              setMessage('Error de red al cargar los datos de las localizaciones.');
-              console.error('Failed to fetch location data', error);
-            } finally {
-              setLoading(false);
-            }
-        };
         fetchLocationsData();
-    }, []);
+    }, [currentPage, itemsPerPage, debouncedSearch]);
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [debouncedSearch]);
     
     // Transforma una imagen a base64
     const fileToBase64 = (file: File): Promise<string> => new Promise((resolve, reject) => {
@@ -91,11 +106,11 @@ const LocalizacionesPage = () => {
 
             if (res.ok) {
                 const { location } = await res.json();
-                setLocalizaciones((prev) => [...prev, location]);
                 setMessage("Localización creada exitosamente.");
                 setNewName("");
                 setNewImage(null);
                 setShowForm(false);
+                fetchLocationsData();
             } else {
                 setMessage("Error al crear la localización.");
             }
@@ -106,7 +121,7 @@ const LocalizacionesPage = () => {
     };
 
     return (
-        <div className="w-full px-4 md:px-8 lg:px-16 py-6">
+        <>
             <div className="flex justify-between items-center mb-6">
                 <div className="w-1/3">
                     <SearchBar
@@ -178,53 +193,36 @@ const LocalizacionesPage = () => {
                 </form>
             </Modal>
 
-            {loading ? (
-                <div className="flex flex-col items-center justify-center h-60 w-full">
-                    <Loader />
-                </div>
-            ) : localizaciones.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-60 text-gray-500 w-full">
-                    <img
-                        src="/globe.svg"
-                        alt="Sin localizaciones"
-                        className="w-28 h-28 mb-2"
-                        style={{ objectFit: "contain" }}
-                    />
-                    <span>No hay localizaciones actualmente</span>
-                </div>
-            ) : (
-                <table className="min-w-full bg-white mx-auto border border-gray-300 rounded-lg shadow-lg overflow-hidden">
-                    <thead className="bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 uppercase text-sm tracking-wider">
-                        <tr>
-                            <th className="px-4 py-3 text-left">Imagen</th>
-                            <th className="px-4 py-3 text-left">Nombre</th>
-                            <th className="px-4 py-3 text-left">ID</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200">
-                    {localizaciones
-                        .filter(loc => search === "" || loc.name.toLowerCase().includes(search.toLowerCase()))
-                        .map((localizacion) => (
-                        <tr key={localizacion.id} className="hover:bg-gray-50 transition-colors duration-200" onClick={() => router.push(`/localizacion/${localizacion.id}`)}>
-                            <td className="px-4 py-3">
-                                {localizacion.image ? (
-                                    <img
-                                    src={`data:image/png;base64,${localizacion.image}`}
-                                    alt={`Imagen de ${localizacion.name}`}
-                                    className="w-10 h-10 rounded-full object-cover"
-                                    />
-                                ) : (
-                                    <div className="w-10 h-10 bg-gray-200 rounded-full" />
-                                )}
-                            </td>
-                            <td className="px-4 py-3 text-sm text-gray-800 font-medium">{localizacion.name}</td>
-                            <td className="px-4 py-3 text-sm text-gray-600">{localizacion.id}</td>
-                        </tr>
-                    ))}
-                    </tbody>
-                </table>
-            )}
-        </div>
+            <Table
+                columns={[
+                    {
+                        header: 'Imagen',
+                        accessor: 'image',
+                        render: (item) => (
+                            item.image ? (
+                                <img
+                                src={`data:image/png;base64,${item.image}`}
+                                alt={`Imagen de ${item.name}`}
+                                className="w-10 h-10 rounded-full object-cover"
+                                />
+                            ) : (
+                                <div className="w-10 h-10 bg-gray-200 rounded-full" />
+                            )
+                        )
+                    },
+                    { header: 'Nombre', accessor: 'name' },
+                    { header: 'ID', accessor: 'id' },
+                ]}
+                data={localizaciones}
+                loading={loading}
+                totalItems={totalLocalizaciones}
+                currentPage={currentPage}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setCurrentPage}
+                onItemsPerPageChange={setItemsPerPage}
+                onRowClick={(item) => router.push(`/localizacion/${item.id}`)}
+            />
+        </>
     );
 };
 

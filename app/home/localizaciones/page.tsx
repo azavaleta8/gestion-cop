@@ -1,14 +1,15 @@
 "use client";
 
 import {
-  Card,
-  Input,
   Button,
+  Input
 } from "@heroui/react";
 import { PlusIcon, PhotoIcon  } from "@heroicons/react/24/solid";
 import { useState, useEffect } from "react";
 import Loader from "@/components/Loader";
 import { useRouter } from "next/navigation";
+import SearchBar from "@/components/SearchBar";
+import Modal from "@/components/Modal";
 
 interface Localizacion {
     id: string;
@@ -70,14 +71,16 @@ const LocalizacionesPage = () => {
     // Maneja el envío del formulario para agregar una nueva localización
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        if (!newName || !newImage) {
-            setMessage("Debes completar todos los campos.");
+        if (!newName) {
+            setMessage("Debes indicar un nombre para la localización.");
             return;
         }
 
-        // Convierte la imagen a base64 para enviarla a la API
-        const base64 = await fileToBase64(newImage);
-        const imageData = base64.split(",")[1]; // elimina el encabezado data:image/png;base64,
+        let imageData = null;
+        if (newImage) {
+            const base64 = await fileToBase64(newImage);
+            imageData = base64.split(",")[1]; 
+        }
 
         try {
             const res = await fetch("/api/locations", {
@@ -103,28 +106,22 @@ const LocalizacionesPage = () => {
     };
 
     return (
-        <div className="flex flex-col items-center gap-6">
-            <Card className="p-4 w-[22rem] items-center gap-2">
-                <h2 className="text-2xl font-bold mb-2">Localizaciones</h2>
-
-                <Input
-                label="Buscar localización"
-                placeholder="Nombre"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-64"
-                />
-                
-                {/* Botón para agregar nueva localización */}
-                <button className={`mt-4 px-4 py-2 text-white rounded transition flex items-center gap-2 ${
+        <div className="w-full px-4 md:px-8 lg:px-16 py-6">
+            <div className="flex justify-between items-center mb-6">
+                <div className="w-1/3">
+                    <SearchBar
+                        placeholder="Buscar localización por nombre..."
+                        onSearchChange={setSearch}
+                    />
+                </div>
+                <button className={`px-4 py-2 text-white rounded transition flex items-center gap-2 ${
                     showForm ? "bg-red-600 hover:bg-red-700" : "bg-green-600 hover:bg-green-700"
                 }`}
-
                     onClick={() => {
                         if (showForm) {
-                        setNewName("");
-                        setNewImage(null);
-                        setMessage("");
+                            setNewName("");
+                            setNewImage(null);
+                            setMessage("");
                         }
                         setShowForm((prev) => !prev);
                     }}
@@ -133,31 +130,36 @@ const LocalizacionesPage = () => {
                         <>
                             <PlusIcon className="w-5 h-5" />
                             Agregar nueva localización
-                        </>)}
+                        </>
+                    )}
                 </button>
+            </div>
 
-                {showForm && (
-                    // Formulario para agregar nueva localización
-                    <form
-                        onSubmit={handleSubmit}
-                        className="mt-4 flex flex-col gap-4 w-full items-center"
-                    >
+            <Modal
+                isOpen={showForm}
+                onClose={() => setShowForm(false)}
+                title="Agregar Nueva Localización"
+            >
+                <form
+                    onSubmit={handleSubmit}
+                    className="flex flex-col gap-4"
+                >
+                    <div className="flex gap-4 items-end">
                         <Input
                             label="Nombre de la localización"
                             placeholder="Ej. Plaza Bolívar"
                             value={newName}
                             onChange={(e) => setNewName(e.target.value)}
-                            className="w-64"
+                            className="flex-grow"
                         />
-                        <div className="w-64">
+                        <div>
                             <label
                                 htmlFor="imagen"
                                 className="cursor-pointer px-4 py-2 bg-blue-400 text-white rounded hover:bg-blue-500 transition flex justify-between items-center"
                             >
                                 <span>{newImage ? "Imagen seleccionada" : "Seleccionar imagen"}</span>
-                                <PhotoIcon className="w-5 h-5" />
+                                <PhotoIcon className="w-5 h-5 ml-2" />
                             </label>
-
                             <input
                                 id="imagen"
                                 type="file"
@@ -166,64 +168,62 @@ const LocalizacionesPage = () => {
                                 className="hidden"
                             />
                         </div>
-                        <button
-                            type="submit"
-                            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                        >
-                            Guardar localización
-                        </button>
-                    </form>
-                )}
-            </Card>
-
-            <div className="w-full px-4 md:px-8 lg:px-16">
-                {loading ? (
-                    <div className="flex flex-col items-center justify-center h-60 w-full">
-                        <Loader />
                     </div>
-                ) : localizaciones.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-60 text-gray-500 w-full">
-                        <img
+                    <button
+                        type="submit"
+                        className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 w-full"
+                    >
+                        Guardar localización
+                    </button>
+                </form>
+            </Modal>
+
+            {loading ? (
+                <div className="flex flex-col items-center justify-center h-60 w-full">
+                    <Loader />
+                </div>
+            ) : localizaciones.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-60 text-gray-500 w-full">
+                    <img
                         src="/globe.svg"
                         alt="Sin localizaciones"
                         className="w-28 h-28 mb-2"
                         style={{ objectFit: "contain" }}
-                        />
-                        <span>No hay localizaciones actualmente</span>
-                    </div>
-                ) : (
-                    <table className="min-w-full bg-white mx-auto border border-gray-300 rounded-lg shadow-lg mt-8 overflow-hidden">
-                        <thead className="bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 uppercase text-sm tracking-wider">
-                            <tr>
-                                <th className="px-4 py-3 text-left">Imagen</th>
-                                <th className="px-4 py-3 text-left">Nombre</th>
-                                <th className="px-4 py-3 text-left">ID</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-200">
-                        {localizaciones
-                            .filter(loc => search === "" || loc.name.toLowerCase().includes(search.toLowerCase()))
-                            .map((localizacion) => (
-                            <tr key={localizacion.id} className="hover:bg-gray-50 transition-colors duration-200" onClick={() => router.push(`/localizacion/${localizacion.id}`)}>
-                                <td className="px-4 py-3">
-                                    {localizacion.image ? (
-                                        <img
-                                        src={`data:image/png;base64,${localizacion.image}`}
-                                        alt={`Imagen de ${localizacion.name}`}
-                                        className="w-10 h-10 rounded-full object-cover"
-                                        />
-                                    ) : (
-                                        <div className="w-10 h-10 bg-gray-200 rounded-full" />
-                                    )}
-                                </td>
-                                <td className="px-4 py-3 text-sm text-gray-800 font-medium">{localizacion.name}</td>
-                                <td className="px-4 py-3 text-sm text-gray-600">{localizacion.id}</td>
-                            </tr>
-                        ))}
-                        </tbody>
-                    </table>
-                )}
-            </div>
+                    />
+                    <span>No hay localizaciones actualmente</span>
+                </div>
+            ) : (
+                <table className="min-w-full bg-white mx-auto border border-gray-300 rounded-lg shadow-lg overflow-hidden">
+                    <thead className="bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 uppercase text-sm tracking-wider">
+                        <tr>
+                            <th className="px-4 py-3 text-left">Imagen</th>
+                            <th className="px-4 py-3 text-left">Nombre</th>
+                            <th className="px-4 py-3 text-left">ID</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                    {localizaciones
+                        .filter(loc => search === "" || loc.name.toLowerCase().includes(search.toLowerCase()))
+                        .map((localizacion) => (
+                        <tr key={localizacion.id} className="hover:bg-gray-50 transition-colors duration-200" onClick={() => router.push(`/localizacion/${localizacion.id}`)}>
+                            <td className="px-4 py-3">
+                                {localizacion.image ? (
+                                    <img
+                                    src={`data:image/png;base64,${localizacion.image}`}
+                                    alt={`Imagen de ${localizacion.name}`}
+                                    className="w-10 h-10 rounded-full object-cover"
+                                    />
+                                ) : (
+                                    <div className="w-10 h-10 bg-gray-200 rounded-full" />
+                                )}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-gray-800 font-medium">{localizacion.name}</td>
+                            <td className="px-4 py-3 text-sm text-gray-600">{localizacion.id}</td>
+                        </tr>
+                    ))}
+                    </tbody>
+                </table>
+            )}
         </div>
     );
 };

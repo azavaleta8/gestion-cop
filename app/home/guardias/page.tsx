@@ -4,12 +4,14 @@ import React, { useState, useEffect } from 'react';
 import AssignGuardModal from '@/components/AssignGuardModal';
 import { UserCircleIcon, CalendarIcon, MapPinIcon } from '@heroicons/react/24/outline';
 
-// Helper to get the start of the week (Sunday)
+// Helper to get the start of the week (Tuesday)
 const getStartOfWeek = (date: Date) => {
   const newDate = new Date(date);
-  const day = newDate.getDay();
-  const diff = newDate.getDate() - day;
-  return new Date(newDate.setDate(diff));
+  const day = newDate.getDay(); // 0 for Sunday, 1 for Monday, 2 for Tuesday...
+  const diff = (day - 2 + 7) % 7; // 2 is for Tuesday
+  newDate.setDate(newDate.getDate() - diff);
+  newDate.setHours(0, 0, 0, 0); // Set to the beginning of the day
+  return newDate;
 };
 
 interface Location {

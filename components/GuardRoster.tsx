@@ -2,6 +2,15 @@
 
 import React, { useState, useEffect } from 'react';
 
+type DutyStaff = { id?: number; name: string };
+type Duty = {
+  id: number;
+  assignedStaff: DutyStaff;
+  actualStaff?: DutyStaff | null;
+  location: { name: string };
+  rol: { name: string };
+};
+
 // Helper function to get the nearest Wednesday
 const getNearestWednesday = () => {
     const today = new Date();
@@ -12,8 +21,8 @@ const getNearestWednesday = () => {
 };
 
 const GuardRoster = () => {
-  const [duties, setDuties] = useState([]);
-  const [currentDate, setCurrentDate] = useState(getNearestWednesday());
+  const [duties, setDuties] = useState<Duty[]>([]);
+  const [currentDate, setCurrentDate] = useState<Date>(getNearestWednesday());
   const [loading, setLoading] = useState(true);
   const [locations, setLocations] = useState<{id: number, name: string}[]>([]);
   const [selectedLocation, setSelectedLocation] = useState('');
@@ -33,7 +42,7 @@ const GuardRoster = () => {
     fetchLocations();
   }, []);
 
-  const fetchDuties = async (date, locationId) => {
+  const fetchDuties = async (date: Date, locationId?: string) => {
     setLoading(true);
     const dateString = date.toISOString().split('T')[0];
     let url = `/api/guards?date=${dateString}`;

@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-export async function GET(
-  request: Request,
-  { params }: { params: { staffDni: string } }
-) {
-  const { staffDni } = params;
+export async function GET(request: Request) {
+  // Derive staffDni from the URL to avoid Next.js param type inference issues
+  const url = new URL(request.url);
+  const segments = url.pathname.split("/").filter(Boolean);
+  const staffDni = decodeURIComponent(segments[segments.length - 1] || "");
 
   try {
     const staffMember = await prisma.staff.findUnique({

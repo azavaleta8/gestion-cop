@@ -20,8 +20,8 @@ export async function GET(request: Request) {
     const guards = await prisma.guardDuty.findMany({
       where: {
         assignedDate: {
-          gte: new Date(startDateParam),
-          lte: new Date(endDateParam),
+          gte: startDate,
+          lte: endDate,
         },
       },
       include: {

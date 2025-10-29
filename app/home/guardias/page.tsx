@@ -63,11 +63,12 @@ const GuardiasPage = () => {
 
     try {
       const response = await fetch(`/api/guards?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`);
-      const { guards: existingGuards } = await response.json();
+      type APIGuard = { id: number; assignedDate: string; assignedStaff: Staff; location: Location };
+      const { guards: existingGuards } = (await response.json()) as { guards: APIGuard[] };
 
       const dailyAssignmentsMap = new Map<string, Guard[]>();
 
-      existingGuards.forEach((g: any) => {
+      existingGuards.forEach((g: APIGuard) => {
         const dateString = g.assignedDate.split('T')[0];
         const guardDate = new Date(dateString + 'T00:00:00');
         

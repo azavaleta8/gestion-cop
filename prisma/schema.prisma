@@ -34,7 +34,7 @@ model Staff {
   phone String
   day   String?
   last_guard String?
-  total_hours Int @default(0)
+  total_assignments Int @default(0)
   image String?
   rolId Int
   rol   Rol    @relation(fields: [rolId], references: [id])

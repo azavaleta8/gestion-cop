@@ -50,16 +50,87 @@ export async function PUT(
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    const updated = await prisma.guardDuty.update({
-      where: { id: guardId },
-      data: {
-        assignedDate: new Date(assignedDate),
-        assignedStaffId,
-        locationId,
-        rolId,
-        notes,
-      },
-      // include: { assignedStaff: true, location: true, rol: true }, // if you want relations back
+    const existing = await prisma.guardDuty.findUnique({ where: { id: guardId } });
+    if (!existing) {
+      return NextResponse.json({ error: "Guard duty not found" }, { status: 404 });
+    }
+
+    const newDate = new Date(assignedDate);
+
+    if (existing.assignedStaffId !== assignedStaffId) {
+      const updated = await prisma.$transaction(async (tx: typeof prisma) => {
+        const upd = await tx.guardDuty.update({
+          where: { id: guardId },
+          data: {
+            assignedDate: newDate,
+            assignedStaffId,
+            locationId,
+            rolId,
+            notes,
+          },
+        });
+
+        // adjust counters
+        await tx.staff.update({
+          where: { id: existing.assignedStaffId },
+          data: { total_assignments: { decrement: 1 } },
+        });
+        await tx.staff.update({
+          where: { id: assignedStaffId },
+          data: { total_assignments: { increment: 1 } },
+        });
+
+        // recompute last_guard for old staff
+        const latestOld = await tx.guardDuty.findFirst({
+          where: { assignedStaffId: existing.assignedStaffId },
+          orderBy: { assignedDate: "desc" },
+          select: { assignedDate: true },
+        });
+        await tx.staff.update({
+          where: { id: existing.assignedStaffId },
+          data: { last_guard: latestOld?.assignedDate ?? null },
+        });
+
+        // recompute last_guard for new staff (after update, max date should reflect newDate if it's latest)
+        const latestNew = await tx.guardDuty.findFirst({
+          where: { assignedStaffId },
+          orderBy: { assignedDate: "desc" },
+          select: { assignedDate: true },
+        });
+        await tx.staff.update({
+          where: { id: assignedStaffId },
+          data: { last_guard: latestNew?.assignedDate ?? null },
+        });
+
+        return upd;
+      });
+      return NextResponse.json(updated, { status: 200 });
+    }
+
+    // Staff unchanged: update duty then recompute that staff's last_guard
+  const updated = await prisma.$transaction(async (tx: typeof prisma) => {
+      const upd = await tx.guardDuty.update({
+        where: { id: guardId },
+        data: {
+          assignedDate: newDate,
+          assignedStaffId,
+          locationId,
+          rolId,
+          notes,
+        },
+      });
+
+      const latest = await tx.guardDuty.findFirst({
+        where: { assignedStaffId },
+        orderBy: { assignedDate: "desc" },
+        select: { assignedDate: true },
+      });
+      await tx.staff.update({
+        where: { id: assignedStaffId },
+        data: { last_guard: latest?.assignedDate ?? null },
+      });
+
+      return upd;
     });
 
     return NextResponse.json(updated, { status: 200 });
@@ -81,7 +152,27 @@ export async function DELETE(
       return NextResponse.json({ error: "Invalid id" }, { status: 400 });
     }
 
-    await prisma.guardDuty.delete({ where: { id: guardId } });
+    const existing = await prisma.guardDuty.findUnique({ where: { id: guardId } });
+    if (!existing) {
+      return NextResponse.json({ error: "Guard duty not found" }, { status: 404 });
+    }
+
+  await prisma.$transaction(async (tx: typeof prisma) => {
+      await tx.guardDuty.delete({ where: { id: guardId } });
+      await tx.staff.update({
+        where: { id: existing.assignedStaffId },
+        data: { total_assignments: { decrement: 1 } },
+      });
+      const latest = await tx.guardDuty.findFirst({
+        where: { assignedStaffId: existing.assignedStaffId },
+        orderBy: { assignedDate: "desc" },
+        select: { assignedDate: true },
+      });
+      await tx.staff.update({
+        where: { id: existing.assignedStaffId },
+        data: { last_guard: latest?.assignedDate ?? null },
+      });
+    });
     return new Response(null, { status: 204 });
   } catch (error) {
     console.error("Error deleting guard duty:", error);

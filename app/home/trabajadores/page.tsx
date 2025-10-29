@@ -23,8 +23,8 @@ interface Funcionario {
     rol: Rol;
     image: string;
     day?: string;
-    total_hours?: number;
-    last_guard?: string;
+    total_assignments?: number;
+    last_guard?: string | null;
 }
 
 const TrabajadoresPage = () => {
@@ -42,6 +42,8 @@ const TrabajadoresPage = () => {
     const [totalFuncionarios, setTotalFuncionarios] = useState(0);
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(10);
+    const [sortKey, setSortKey] = useState<keyof Funcionario>('name');
+    const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
 
     const router = useRouter();
     const debouncedSearch = useDebounce(search, 500);
@@ -53,6 +55,8 @@ const TrabajadoresPage = () => {
                 page: String(currentPage),
                 limit: String(itemsPerPage),
                 search: debouncedSearch,
+                sortBy: String(sortKey),
+                sortDir: sortDir,
             });
             const [staffRes, rolesRes] = await Promise.all([
                 fetch(`/api/users?${params.toString()}`),
@@ -84,7 +88,7 @@ const TrabajadoresPage = () => {
 
     useEffect(() => {
         fetchStaffData();
-    }, [currentPage, itemsPerPage, debouncedSearch]);
+    }, [currentPage, itemsPerPage, debouncedSearch, sortKey, sortDir]);
 
     useEffect(() => {
         setCurrentPage(1);
@@ -150,7 +154,7 @@ const TrabajadoresPage = () => {
 
     const formularioCompleto = newName.trim() !== "" && newDni.trim() !== "" && newPhone.trim() !== "" &&  newRol !== "";
 
-    const columns: { header: string; accessor: keyof Funcionario; render?: (item: Funcionario) => React.ReactNode }[] = [
+    const columns: { header: string; accessor: keyof Funcionario; render?: (item: Funcionario) => React.ReactNode; sortable?: boolean; sortValue?: (item: Funcionario) => string | number | Date | null | undefined }[] = [
         {
             header: 'Foto',
             accessor: 'image',
@@ -164,13 +168,16 @@ const TrabajadoresPage = () => {
                 ) : (
                     <UserCircleIcon className="w-10 h-10 text-gray-400" />
                 )
-            )
+            ),
+            sortable: false,
         },
-        { header: 'Nombre', accessor: 'name' },
-        { header: 'Cédula', accessor: 'dni' },
+        { header: 'Nombre', accessor: 'name', sortable: true, sortValue: (i) => i.name?.toLowerCase() },
+        { header: 'Cédula', accessor: 'dni', sortable: true, sortValue: (i) => Number(i.dni) || 0 },
         { header: 'Teléfono', accessor: 'phone' },
         { header: 'Cargo', accessor: 'rol', render: (item: Funcionario) => item.rol.name },
-        { header: 'Opciones', accessor: 'id', render: (item: Funcionario) => (
+        { header: 'Asignaciones', accessor: 'total_assignments', render: (item: Funcionario) => item.total_assignments ?? 0, sortable: true, sortValue: (i) => i.total_assignments ?? 0 },
+        { header: 'Última guardia', accessor: 'last_guard', render: (i: Funcionario) => i.last_guard ? new Date(i.last_guard).toLocaleDateString('es-ES') : '—', sortable: true, sortValue: (i) => (i.last_guard ? new Date(i.last_guard) : null) },
+    { header: 'Opciones', accessor: 'id', render: (item: Funcionario) => (
             <Button
                 color="primary"
                 className="px-4 py-2 text-white rounded transition flex items-center gap-2 bg-green-600 hover:bg-green-700"
@@ -234,14 +241,14 @@ const TrabajadoresPage = () => {
                         label="Nombre del funcionario"
                         placeholder="Ej. Pedro Pérez"
                         value={newName}
-                        onChange={(e) => setNewName(e.target.value)}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewName(e.target.value)}
                     />
                     <Input
                         type="text"
                         label="Cédula del funcionario"
                         placeholder="Ej. 12345678"
                         value={newDni}
-                        onChange={(e) => {
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                             const soloNumeros = e.target.value.replace(/\D/g, '');
                             setNewDni(soloNumeros);
                         }}
@@ -251,7 +258,7 @@ const TrabajadoresPage = () => {
                         label="Teléfono del funcionario"
                         placeholder="Ej. 04123456789"
                         value={newPhone}
-                        onChange={(e) => {
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                             const soloNumeros = e.target.value.replace(/\D/g, '');
                             setNewPhone(soloNumeros);
                         }}
@@ -261,7 +268,7 @@ const TrabajadoresPage = () => {
                         <select
                             id="rol"
                             value={newRol}
-                            onChange={(e) => setNewRol(e.target.value)}
+                            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setNewRol(e.target.value)}
                             className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
                         >
                             <option value="">Seleccione un rol</option>
@@ -314,6 +321,13 @@ const TrabajadoresPage = () => {
                 onRowClick={(item) => {
                     const encodedId = encode(item.id.toString());
                     router.push(`/trabajador/${encodedId}`);
+                }}
+                serverSortKey={sortKey}
+                serverSortDir={sortDir}
+                onSortChange={(key, dir) => {
+                    setSortKey(key as keyof Funcionario);
+                    setSortDir(dir);
+                    setCurrentPage(1);
                 }}
             />
         </>

@@ -8,6 +8,8 @@ interface Column<T> {
   header: string;
   accessor: keyof T;
   render?: (item: T) => React.ReactNode;
+  sortable?: boolean;
+  sortValue?: (item: T) => string | number | Date | null | undefined;
 }
 
 interface TableProps<T> {
@@ -21,6 +23,9 @@ interface TableProps<T> {
   onItemsPerPageChange?: (limit: number) => void;
   onRowClick?: (item: T) => void;
   selectedRow?: T | null;
+  serverSortKey?: keyof T | null;
+  serverSortDir?: 'asc' | 'desc';
+  onSortChange?: (key: keyof T, dir: 'asc' | 'desc') => void;
 }
 
 const Table = <T extends { id: number | string }>({
@@ -34,8 +39,59 @@ const Table = <T extends { id: number | string }>({
   onItemsPerPageChange = () => {},
   onRowClick,
   selectedRow,
+  serverSortKey = null,
+  serverSortDir = 'asc',
+  onSortChange,
 }: TableProps<T>) => {
   const totalPages = totalItems > 0 ? Math.ceil(totalItems / itemsPerPage) : 0;
+
+  const [sortKey, setSortKey] = React.useState<keyof T | null>(null);
+  const [sortDir, setSortDir] = React.useState<'asc' | 'desc'>('asc');
+
+  const isServerSort = serverSortKey !== null && typeof onSortChange === 'function';
+
+  const sortedData = React.useMemo(() => {
+    if (isServerSort) return data; // server controls ordering
+    if (!sortKey) return data;
+    const col = columns.find(c => c.accessor === sortKey);
+    if (!col || !col.sortable) return data;
+    const getVal = (item: T) => col.sortValue ? col.sortValue(item) : (item[col.accessor] as unknown as string | number | Date | null | undefined);
+    const copy = [...data];
+    copy.sort((a, b) => {
+      const va = getVal(a);
+      const vb = getVal(b);
+      if (va == null && vb == null) return 0;
+      if (va == null) return 1; // nulls last
+      if (vb == null) return -1;
+      // Dates
+      const aVal = va instanceof Date ? va.getTime() : typeof va === 'string' && !Number.isNaN(Date.parse(va)) && (col.sortValue ? false : true) ? Date.parse(va) : va;
+      const bVal = vb instanceof Date ? vb.getTime() : typeof vb === 'string' && !Number.isNaN(Date.parse(vb)) && (col.sortValue ? false : true) ? Date.parse(vb) : vb;
+      if (aVal < (bVal as any)) return sortDir === 'asc' ? -1 : 1;
+      if (aVal > (bVal as any)) return sortDir === 'asc' ? 1 : -1;
+      return 0;
+    });
+    return copy;
+  }, [data, columns, sortKey, sortDir, isServerSort]);
+
+  const toggleSort = (key: keyof T, enabled?: boolean) => {
+    if (!enabled) return;
+    if (isServerSort) {
+      const activeKey = serverSortKey as keyof T | null;
+      const activeDir = serverSortDir;
+      if (activeKey !== key) {
+        onSortChange && onSortChange(key, 'asc');
+      } else {
+        onSortChange && onSortChange(key, activeDir === 'asc' ? 'desc' : 'asc');
+      }
+    } else {
+      if (sortKey !== key) {
+        setSortKey(key);
+        setSortDir('asc');
+      } else {
+        setSortDir(prev => (prev === 'asc' ? 'desc' : 'asc'));
+      }
+    }
+  };
 
   return (
     <div>
@@ -58,15 +114,31 @@ const Table = <T extends { id: number | string }>({
           <table className="min-w-full bg-white">
             <thead className="bg-gray-50 text-gray-700 uppercase text-sm tracking-wider">
               <tr>
-                {columns.map((col) => (
-                  <th key={String(col.accessor)} className="px-4 py-3 text-left">
-                    {col.header}
-                  </th>
-                ))}
+                {columns.map((col) => {
+                  const isActive = isServerSort ? serverSortKey === col.accessor : sortKey === col.accessor;
+                  return (
+                    <th key={String(col.accessor)} className="px-4 py-3 text-left select-none">
+                      {col.sortable ? (
+                        <button
+                          type="button"
+                          onClick={() => toggleSort(col.accessor, col.sortable)}
+                          className="flex items-center gap-1 text-left"
+                        >
+                          <span>{col.header}</span>
+                          <span className="text-gray-400 text-xs">
+                            {isActive ? ((isServerSort ? serverSortDir : sortDir) === 'asc' ? '▲' : '▼') : '↕'}
+                          </span>
+                        </button>
+                      ) : (
+                        col.header
+                      )}
+                    </th>
+                  );
+                })}
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {data.map((item, rowIndex) => (
+              {sortedData.map((item, rowIndex) => (
                 <tr
                   key={item.id}
                   onClick={() => onRowClick && onRowClick(item)}

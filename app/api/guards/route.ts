@@ -57,16 +57,30 @@ export async function POST(request: Request) {
 
     const date = new Date(assignedDate);
 
-    // Always create a new duty for a POST request
-    const newDuty = await prisma.guardDuty.create({
-      data: {
-        assignedDate: date,
-        assignedStaffId,
-        locationId,
-        rolId,
-        notes,
-      },
-    });
+    // Create duty and update staff counters/last_guard in a transaction
+    const [newDuty] = await prisma.$transaction([
+      prisma.guardDuty.create({
+        data: {
+          assignedDate: date,
+          assignedStaffId,
+          locationId,
+          rolId,
+          notes,
+        },
+      }),
+      prisma.staff.update({
+        where: { id: assignedStaffId },
+        data: { total_assignments: { increment: 1 } },
+      }),
+      // only set last_guard if it's null or earlier than this duty's date
+      prisma.staff.updateMany({
+        where: {
+          id: assignedStaffId,
+          OR: [{ last_guard: null }, { last_guard: { lt: date } }],
+        },
+        data: { last_guard: date },
+      }),
+    ]);
     return NextResponse.json(newDuty, { status: 201 });
   } catch (error) {
     console.error("Error creating guard duty:", error);

@@ -85,7 +85,7 @@ export default function Localizacion() {
                         <p><strong>DNI:</strong> {funcionario.dni}</p>
                         <p><strong>Teléfono:</strong> {funcionario.phone}</p>
                         <p><strong>Última guardia:</strong> {funcionario.last_guard}</p>
-                        <p><strong>Total de horas:</strong> {funcionario.total_hours}</p>
+                        <p><strong>Total de asignaciones:</strong> {funcionario.total_assignments ?? 0}</p>
                         
                         {isEditing ? (
                             <div className="flex items-center gap-4 mt-4">

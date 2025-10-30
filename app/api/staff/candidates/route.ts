@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+// Lightweight typing for query shapes to satisfy lint rules without depending on Prisma internals
+type SortOrder = "asc" | "desc";
+type OrderByInput = Array<Record<string, SortOrder>>;
 
 type Candidate = {
   id: number;
@@ -32,7 +35,7 @@ export async function GET(request: Request) {
   const monthEnd = new Date(Date.UTC(selectedDate.getUTCFullYear(), selectedDate.getUTCMonth() + 1, 1));
 
   // Where: exclude BUSY (any duty on selected date), apply search
-  const baseWhere: any = {
+  const baseWhere: Record<string, unknown> = {
     AND: [
       search
         ? {
@@ -49,9 +52,9 @@ export async function GET(request: Request) {
   };
 
   // Order: prioritize fairness or simple name
-  const orderBy = prioritize
-    ? ([{ last_guard: "asc" }, { total_assignments: "asc" }, { name: "asc" }] as const)
-    : ([{ name: "asc" }] as const);
+  const orderBy: OrderByInput = prioritize
+    ? [{ last_guard: "asc" }, { total_assignments: "asc" }, { name: "asc" }]
+    : [{ name: "asc" }];
 
   try {
     // total count for pagination
@@ -69,7 +72,7 @@ export async function GET(request: Request) {
 
     const staff: StaffRow[] = await prisma.staff.findMany({
       where: baseWhere,
-      orderBy: orderBy as any,
+  orderBy,
       skip,
       take: limit,
       select: {
@@ -85,7 +88,7 @@ export async function GET(request: Request) {
     const ids = staff.map((s: StaffRow) => s.id);
 
     // Compute month_count for returned candidates using groupBy on both relations
-    let monthCountMap = new Map<number, number>();
+  const monthCountMap = new Map<number, number>();
     if (ids.length > 0) {
       const assigned = await prisma.guardDuty.groupBy({
         by: ["assignedStaffId"],

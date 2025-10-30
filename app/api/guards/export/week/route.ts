@@ -93,7 +93,7 @@ export async function GET(req: Request) {
     const row = ws.getRow(r);
     row.font = { bold: true };
     row.alignment = { horizontal: "center", vertical: "middle" };
-    row.eachCell((cell: any) => {
+    row.eachCell((cell: ExcelJS.Cell) => {
       cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: r === 2 ? "FFFFFF00" : "FFFFFFFF" } };
       cell.border = {
         top: { style: "thin" }, left: { style: "thin" }, bottom: { style: "thin" }, right: { style: "thin" },
@@ -120,7 +120,7 @@ export async function GET(req: Request) {
   // Borders for data
   for (let r = 4; r <= ws.rowCount; r++) {
     const row = ws.getRow(r);
-    row.eachCell((cell: any) => {
+    row.eachCell((cell: ExcelJS.Cell) => {
       cell.border = {
         top: { style: "thin" }, left: { style: "thin" }, bottom: { style: "thin" }, right: { style: "thin" },
       };

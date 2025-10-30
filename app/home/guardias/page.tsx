@@ -128,6 +128,30 @@ const GuardiasPage = () => {
     setCurrentWeekStart(newWeekStart);
   };
 
+  const handleExportWeek = async () => {
+    // Build YYYY-MM-DD for currentWeekStart (avoid timezone issues)
+    const y = currentWeekStart.getFullYear();
+    const m = String(currentWeekStart.getMonth() + 1).padStart(2, '0');
+    const d = String(currentWeekStart.getDate()).padStart(2, '0');
+    const start = `${y}-${m}-${d}`;
+    try {
+      const res = await fetch(`/api/guards/export/week?start=${start}`);
+      if (!res.ok) throw new Error('No se pudo exportar');
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `guardias_semana_${start}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error(e);
+      alert('Error al exportar la semana a Excel');
+    }
+  };
+
   const openCreateModal = (date: Date) => {
     setSelectedDate(date);
     setEditingGuard(null);
@@ -206,6 +230,7 @@ const GuardiasPage = () => {
             <button onClick={handlePrevWeek} className="p-2 rounded-md hover:bg-gray-100 text-gray-600">&lt;</button>
             <div className="text-center font-semibold text-blue-600">{getWeekDisplay()}</div>
             <button onClick={handleNextWeek} className="p-2 rounded-md hover:bg-gray-100 text-gray-600">&gt;</button>
+            <button onClick={handleExportWeek} className="ml-4 px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">Exportar Excel</button>
           </div>
         </div>
 

@@ -48,6 +48,8 @@ model Location {
   id   Int    @id @default(autoincrement())
   name String @unique
   image String?
+  last_guard DateTime? @db.Date
+  total_assignments Int @default(0)
   staff Staff[] // Relación uno-a-muchos: una Location tiene muchos trabajadores
   duties GuardDuty[]
 }

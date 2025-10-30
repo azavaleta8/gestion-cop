@@ -50,14 +50,15 @@ export async function PUT(
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    const existing = await prisma.guardDuty.findUnique({ where: { id: guardId } });
+  const existing = await prisma.guardDuty.findUnique({ where: { id: guardId } });
     if (!existing) {
       return NextResponse.json({ error: "Guard duty not found" }, { status: 404 });
     }
 
     const newDate = new Date(assignedDate);
 
-    if (existing.assignedStaffId !== assignedStaffId) {
+    const locationChanged = existing.locationId !== locationId;
+    if (existing.assignedStaffId !== assignedStaffId || locationChanged) {
       const updated = await prisma.$transaction(async (tx: typeof prisma) => {
         const upd = await tx.guardDuty.update({
           where: { id: guardId },
@@ -79,6 +80,16 @@ export async function PUT(
           where: { id: assignedStaffId },
           data: { total_assignments: { increment: 1 } },
         });
+        if (locationChanged) {
+          await tx.location.update({
+            where: { id: existing.locationId },
+            data: { total_assignments: { decrement: 1 } },
+          });
+          await tx.location.update({
+            where: { id: locationId },
+            data: { total_assignments: { increment: 1 } },
+          });
+        }
 
         // recompute last_guard for old staff
         const latestOld = await tx.guardDuty.findFirst({
@@ -101,6 +112,40 @@ export async function PUT(
           where: { id: assignedStaffId },
           data: { last_guard: latestNew?.assignedDate ?? null },
         });
+
+        // recompute last_guard for locations
+        if (locationChanged) {
+          const latestOldLoc = await tx.guardDuty.findFirst({
+            where: { locationId: existing.locationId },
+            orderBy: { assignedDate: "desc" },
+            select: { assignedDate: true },
+          });
+          await tx.location.update({
+            where: { id: existing.locationId },
+            data: { last_guard: latestOldLoc?.assignedDate ?? null },
+          });
+
+          const latestNewLoc = await tx.guardDuty.findFirst({
+            where: { locationId },
+            orderBy: { assignedDate: "desc" },
+            select: { assignedDate: true },
+          });
+          await tx.location.update({
+            where: { id: locationId },
+            data: { last_guard: latestNewLoc?.assignedDate ?? null },
+          });
+        } else {
+          // if only date changed, ensure location's last_guard is still correct
+          const latestLoc = await tx.guardDuty.findFirst({
+            where: { locationId },
+            orderBy: { assignedDate: "desc" },
+            select: { assignedDate: true },
+          });
+          await tx.location.update({
+            where: { id: locationId },
+            data: { last_guard: latestLoc?.assignedDate ?? null },
+          });
+        }
 
         return upd;
       });
@@ -130,6 +175,16 @@ export async function PUT(
         data: { last_guard: latest?.assignedDate ?? null },
       });
 
+      const latestLoc = await tx.guardDuty.findFirst({
+        where: { locationId },
+        orderBy: { assignedDate: "desc" },
+        select: { assignedDate: true },
+      });
+      await tx.location.update({
+        where: { id: locationId },
+        data: { last_guard: latestLoc?.assignedDate ?? null },
+      });
+
       return upd;
     });
 
@@ -152,7 +207,7 @@ export async function DELETE(
       return NextResponse.json({ error: "Invalid id" }, { status: 400 });
     }
 
-    const existing = await prisma.guardDuty.findUnique({ where: { id: guardId } });
+  const existing = await prisma.guardDuty.findUnique({ where: { id: guardId } });
     if (!existing) {
       return NextResponse.json({ error: "Guard duty not found" }, { status: 404 });
     }
@@ -171,6 +226,21 @@ export async function DELETE(
       await tx.staff.update({
         where: { id: existing.assignedStaffId },
         data: { last_guard: latest?.assignedDate ?? null },
+      });
+
+      // update location counters and last_guard
+      await tx.location.update({
+        where: { id: existing.locationId },
+        data: { total_assignments: { decrement: 1 } },
+      });
+      const latestLoc = await tx.guardDuty.findFirst({
+        where: { locationId: existing.locationId },
+        orderBy: { assignedDate: "desc" },
+        select: { assignedDate: true },
+      });
+      await tx.location.update({
+        where: { id: existing.locationId },
+        data: { last_guard: latestLoc?.assignedDate ?? null },
       });
     });
     return new Response(null, { status: 204 });

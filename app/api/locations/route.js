@@ -4,9 +4,12 @@ import { prisma } from "@/lib/prisma";
 export async function GET(req) {
   try {
     const { searchParams } = new URL(req.url);
-    const page = parseInt(searchParams.get('page') || '1', 10);
-    const limit = parseInt(searchParams.get('limit') || '10', 10);
-    const search = searchParams.get('search') || '';
+  const page = parseInt(searchParams.get('page') || '1', 10);
+  const limit = parseInt(searchParams.get('limit') || '10', 10);
+  const search = searchParams.get('search') || '';
+  const sortBy = (searchParams.get('sortBy') || 'total_assignments').toString();
+  const sortDirParam = (searchParams.get('sortDir') || 'desc').toString().toLowerCase();
+    const sortDir = sortDirParam === 'desc' ? 'desc' : 'asc';
 
     const skip = (page - 1) * limit;
 
@@ -19,14 +22,15 @@ export async function GET(req) {
           }
         : {};
 
+    const allowedSortFields = new Set(['name', 'total_assignments', 'last_guard']);
+    const sortField = allowedSortFields.has(sortBy) ? sortBy : 'name';
+
     const [locations, total] = await prisma.$transaction([
       prisma.location.findMany({
         where,
         skip,
         take: limit,
-        orderBy: {
-          name: 'asc', 
-        },
+        orderBy: { [sortField]: sortDir },
       }),
       prisma.location.count({ where }),
     ]);
@@ -36,6 +40,8 @@ export async function GET(req) {
       total,
       page,
       limit,
+      sortBy: sortField,
+      sortDir,
     }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },

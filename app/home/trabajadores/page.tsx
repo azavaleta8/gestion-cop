@@ -43,8 +43,8 @@ const TrabajadoresPage = () => {
     const [totalFuncionarios, setTotalFuncionarios] = useState(0);
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(10);
-    const [sortKey, setSortKey] = useState<keyof Funcionario>('name');
-    const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
+    const [sortKey, setSortKey] = useState<keyof Funcionario>('total_assignments');
+    const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
     const [profileModalOpen, setProfileModalOpen] = useState(false);
     const [selectedEncodedId, setSelectedEncodedId] = useState<string | null>(null);
 

@@ -80,6 +80,18 @@ export async function POST(request: Request) {
         },
         data: { last_guard: date },
       }),
+      // location counters / last_guard
+      prisma.location.update({
+        where: { id: locationId },
+        data: { total_assignments: { increment: 1 } },
+      }),
+      prisma.location.updateMany({
+        where: {
+          id: locationId,
+          OR: [{ last_guard: null }, { last_guard: { lt: date } }],
+        },
+        data: { last_guard: date },
+      }),
     ]);
     return NextResponse.json(newDuty, { status: 201 });
   } catch (error) {

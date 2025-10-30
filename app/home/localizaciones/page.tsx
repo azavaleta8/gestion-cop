@@ -9,11 +9,14 @@ import Modal from "@/components/Modal";
 import Table from "@/components/Table";
 import Loader from "@/components/Loader";
 import useDebounce from "@/lib/hooks/useDebounce";
+import LocationProfileModal from "@/components/LocationProfileModal";
 
 interface Localizacion {
     id: string;
     name: string;
     image: string;
+    total_assignments?: number;
+    last_guard?: string | null;
 }
 
 const LocalizacionesPage = () => {
@@ -28,6 +31,11 @@ const LocalizacionesPage = () => {
     const [totalLocalizaciones, setTotalLocalizaciones] = useState(0);
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(10);
+    const [sortBy, setSortBy] = useState<keyof Localizacion>('total_assignments');
+    const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+
+    const [profileOpen, setProfileOpen] = useState(false);
+    const [profileLocationId, setProfileLocationId] = useState<number | null>(null);
     
     const router = useRouter();
     const debouncedSearch = useDebounce(search, 500);
@@ -39,6 +47,8 @@ const LocalizacionesPage = () => {
               page: String(currentPage),
               limit: String(itemsPerPage),
               search: debouncedSearch,
+              sortBy: String(sortBy),
+              sortDir: sortDir,
           });
           const res = await fetch(`/api/locations?${params.toString()}`);
           if (res.ok) {
@@ -63,7 +73,7 @@ const LocalizacionesPage = () => {
 
     useEffect(() => {
         fetchLocationsData();
-    }, [currentPage, itemsPerPage, debouncedSearch]);
+    }, [currentPage, itemsPerPage, debouncedSearch, sortBy, sortDir]);
 
     useEffect(() => {
         setCurrentPage(1);
@@ -167,7 +177,7 @@ const LocalizacionesPage = () => {
                             label="Nombre de la localización"
                             placeholder="Ej. Plaza Bolívar"
                             value={newName}
-                            onChange={(e) => setNewName(e.target.value)}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewName(e.target.value)}
                             className="flex-grow"
                         />
                         <div>
@@ -213,8 +223,15 @@ const LocalizacionesPage = () => {
                             )
                         )
                     },
-                    { header: 'Nombre', accessor: 'name' },
-                    { header: 'ID', accessor: 'id' },
+                                        { header: 'Nombre', accessor: 'name', sortable: true },
+                                        { header: 'Asignaciones', accessor: 'total_assignments', sortable: true },
+                                        { header: 'Última guardia', accessor: 'last_guard', sortable: true, render: (item) => item.last_guard ? new Date(item.last_guard).toLocaleDateString('es-ES') : '—' },
+                                        { header: 'Acciones', accessor: 'id', render: (item) => (
+                                            <button
+                                                className="px-3 py-1 rounded bg-blue-600 text-white hover:bg-blue-700"
+                                                onClick={(e) => { e.stopPropagation(); setProfileLocationId(Number(item.id)); setProfileOpen(true); }}
+                                            >Ver Perfil</button>
+                                        )},
                 ]}
                 data={localizaciones}
                 loading={loading}
@@ -223,7 +240,16 @@ const LocalizacionesPage = () => {
                 itemsPerPage={itemsPerPage}
                 onPageChange={setCurrentPage}
                 onItemsPerPageChange={setItemsPerPage}
-                onRowClick={(item) => router.push(`/localizacion/${item.id}`)}
+                                serverSortKey={sortBy}
+                                serverSortDir={sortDir}
+                                onSortChange={(key, dir) => { setSortBy(key); setSortDir(dir); setCurrentPage(1); }}
+                                onRowClick={(item) => router.push(`/localizacion/${item.id}`)}
+            />
+
+            <LocationProfileModal
+              isOpen={profileOpen}
+              onClose={() => setProfileOpen(false)}
+              locationId={profileLocationId}
             />
         </>
     );

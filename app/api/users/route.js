@@ -8,8 +8,8 @@ export async function GET(req) {
     const page = parseInt(searchParams.get('page') || '1', 10);
     const limit = parseInt(searchParams.get('limit') || '10', 10);
     const search = searchParams.get('search') || '';
-    const sortBy = (searchParams.get('sortBy') || 'name').toString();
-    const sortDirParam = (searchParams.get('sortDir') || 'asc').toString().toLowerCase();
+  const sortBy = (searchParams.get('sortBy') || 'total_assignments').toString();
+  const sortDirParam = (searchParams.get('sortDir') || 'desc').toString().toLowerCase();
     const sortDir = sortDirParam === 'desc' ? 'desc' : 'asc';
 
     const skip = (page - 1) * limit;

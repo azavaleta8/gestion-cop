@@ -63,12 +63,27 @@ const Table = <T extends { id: number | string }>({
       if (va == null && vb == null) return 0;
       if (va == null) return 1; // nulls last
       if (vb == null) return -1;
-      // Dates
-      const aVal = va instanceof Date ? va.getTime() : typeof va === 'string' && !Number.isNaN(Date.parse(va)) && (col.sortValue ? false : true) ? Date.parse(va) : va;
-      const bVal = vb instanceof Date ? vb.getTime() : typeof vb === 'string' && !Number.isNaN(Date.parse(vb)) && (col.sortValue ? false : true) ? Date.parse(vb) : vb;
-      if (aVal < (bVal as any)) return sortDir === 'asc' ? -1 : 1;
-      if (aVal > (bVal as any)) return sortDir === 'asc' ? 1 : -1;
-      return 0;
+      const parseMaybeDate = (v: unknown): number | string => {
+        if (v instanceof Date) return v.getTime();
+        if (typeof v === 'number') return v;
+        if (typeof v === 'string') {
+          const parsed = Date.parse(v);
+          if (!Number.isNaN(parsed) && !col.sortValue) return parsed;
+          return v;
+        }
+        return String(v ?? '');
+      };
+      const aComp = parseMaybeDate(va);
+      const bComp = parseMaybeDate(vb);
+      let cmp = 0;
+      if (typeof aComp === 'number' && typeof bComp === 'number') {
+        cmp = aComp < bComp ? -1 : aComp > bComp ? 1 : 0;
+      } else {
+        const as = String(aComp);
+        const bs = String(bComp);
+        cmp = as.localeCompare(bs);
+      }
+      return sortDir === 'asc' ? cmp : -cmp;
     });
     return copy;
   }, [data, columns, sortKey, sortDir, isServerSort]);

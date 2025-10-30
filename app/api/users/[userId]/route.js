@@ -20,6 +20,7 @@ export async function GET(req) {
 
     const funcionario = await prisma.staff.findUnique({
       where: { id: parseInt(decodedId) }, // Usa el ID real
+      include: { rol: true }, // incluir rol para mostrar el cargo en el perfil
     });
 
     if (!funcionario) {

@@ -33,7 +33,7 @@ model Staff {
   name  String
   phone String
   day   String?
-  last_guard String?
+  last_guard DateTime? @db.Date
   total_assignments Int @default(0)
   image String?
   rolId Int

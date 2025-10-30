@@ -8,6 +8,7 @@ import { Input, Button } from "@heroui/react";
 import useDebounce from "@/lib/hooks/useDebounce";
 import SearchBar from "@/components/SearchBar";
 import Modal from "@/components/Modal";
+import StaffProfileModal from "@/components/StaffProfileModal";
 import Table from "@/components/Table";
 
 interface Rol {
@@ -44,6 +45,8 @@ const TrabajadoresPage = () => {
     const [itemsPerPage, setItemsPerPage] = useState(10);
     const [sortKey, setSortKey] = useState<keyof Funcionario>('name');
     const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
+    const [profileModalOpen, setProfileModalOpen] = useState(false);
+    const [selectedEncodedId, setSelectedEncodedId] = useState<string | null>(null);
 
     const router = useRouter();
     const debouncedSearch = useDebounce(search, 500);
@@ -177,7 +180,7 @@ const TrabajadoresPage = () => {
         { header: 'Cargo', accessor: 'rol', render: (item: Funcionario) => item.rol.name },
         { header: 'Asignaciones', accessor: 'total_assignments', render: (item: Funcionario) => item.total_assignments ?? 0, sortable: true, sortValue: (i) => i.total_assignments ?? 0 },
         { header: 'Última guardia', accessor: 'last_guard', render: (i: Funcionario) => i.last_guard ? new Date(i.last_guard).toLocaleDateString('es-ES') : '—', sortable: true, sortValue: (i) => (i.last_guard ? new Date(i.last_guard) : null) },
-    { header: 'Opciones', accessor: 'id', render: (item: Funcionario) => (
+        { header: 'Opciones', accessor: 'id', render: (item: Funcionario) => (
             <Button
                 color="primary"
                 className="px-4 py-2 text-white rounded transition flex items-center gap-2 bg-green-600 hover:bg-green-700"
@@ -185,7 +188,8 @@ const TrabajadoresPage = () => {
                 size="md"
                 onPress={() => {
                     const encodedId = encode(item.id.toString());
-                    router.push(`/trabajador/${encodedId}`);
+                    setSelectedEncodedId(encodedId);
+                    setProfileModalOpen(true);
                 }}
             >
                 Ver Perfil
@@ -320,7 +324,8 @@ const TrabajadoresPage = () => {
                 onItemsPerPageChange={setItemsPerPage}
                 onRowClick={(item) => {
                     const encodedId = encode(item.id.toString());
-                    router.push(`/trabajador/${encodedId}`);
+                    setSelectedEncodedId(encodedId);
+                    setProfileModalOpen(true);
                 }}
                 serverSortKey={sortKey}
                 serverSortDir={sortDir}
@@ -329,6 +334,12 @@ const TrabajadoresPage = () => {
                     setSortDir(dir);
                     setCurrentPage(1);
                 }}
+            />
+
+            <StaffProfileModal
+                isOpen={profileModalOpen}
+                onClose={() => setProfileModalOpen(false)}
+                encodedId={selectedEncodedId}
             />
         </>
     );

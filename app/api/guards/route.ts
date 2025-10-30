@@ -57,6 +57,17 @@ export async function POST(request: Request) {
 
     const date = new Date(assignedDate);
 
+    // Prevent double-booking: ensure the staff has no duty that day
+    const conflict = await prisma.guardDuty.count({
+      where: { assignedStaffId, assignedDate: date },
+    });
+    if (conflict > 0) {
+      return NextResponse.json(
+        { error: "El funcionario ya tiene una guardia asignada ese día." },
+        { status: 409 }
+      );
+    }
+
     // Create duty and update staff counters/last_guard in a transaction
     const [newDuty] = await prisma.$transaction([
       prisma.guardDuty.create({

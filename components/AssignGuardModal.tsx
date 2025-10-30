@@ -20,7 +20,12 @@ interface Staff {
     id: number;
     name: string;
     dni: string;
-    rol: Rol;
+  rol: Rol;
+  total_assignments?: number;
+  last_guard?: string | null;
+  month_count?: number;
+  last_date?: string | null;
+  is_free?: boolean;
 }
 
 interface AssignGuardModalProps {
@@ -40,43 +45,77 @@ const AssignGuardModal: React.FC<AssignGuardModalProps> = ({ isOpen, onClose, on
   const [totalStaffPages, setTotalStaffPages] = useState(0);
   const debouncedStaffSearch = useDebounce(staffSearch, 500);
 
+  const [prioritize, setPrioritize] = useState(true);
+  const [staffLoading, setStaffLoading] = useState(false);
+
   const [locations, setLocations] = useState<Location[]>([]);
   const [locationSearch, setLocationSearch] = useState('');
   const [locationPage, setLocationPage] = useState(1);
   const [totalLocationPages, setTotalLocationPages] = useState(0);
   const debouncedLocationSearch = useDebounce(locationSearch, 500);
+  const [locationsLoading, setLocationsLoading] = useState(false);
 
   const limit = 5;
 
+  // Refetch staff when page/search/prioritize changes
   useEffect(() => {
     if (isOpen) {
       fetchStaff();
+    }
+  }, [isOpen, staffPage, debouncedStaffSearch, prioritize]);
+
+  // Refetch locations when page/search changes
+  useEffect(() => {
+    if (isOpen) {
       fetchLocations();
     }
-  }, [isOpen, staffPage, debouncedStaffSearch, locationPage, debouncedLocationSearch]);
+  }, [isOpen, locationPage, debouncedLocationSearch]);
 
   const fetchStaff = async () => {
-    const params = new URLSearchParams({
-      page: String(staffPage),
-      limit: String(limit),
-      search: debouncedStaffSearch,
-    });
-    const res = await fetch(`/api/users?${params.toString()}`);
-    const { funcionarios, total } = await res.json();
-    setStaffList(funcionarios);
-    setTotalStaffPages(Math.ceil(total / limit));
+    setStaffLoading(true);
+    const ymd = date.toISOString().slice(0,10);
+    try {
+      const params = new URLSearchParams({
+        date: ymd,
+        page: String(staffPage),
+        limit: String(limit),
+        search: debouncedStaffSearch,
+        prioritize: prioritize ? '1' : '0',
+      });
+      const res = await fetch(`/api/staff/candidates?${params.toString()}`);
+      if (!res.ok) {
+        setStaffList([]);
+        setTotalStaffPages(0);
+        return;
+      }
+      const { candidates, total } = await res.json();
+      setStaffList(candidates);
+      setTotalStaffPages(Math.ceil((total || 0) / limit));
+    } finally {
+      setStaffLoading(false);
+    }
   };
 
   const fetchLocations = async () => {
-    const params = new URLSearchParams({
-      page: String(locationPage),
-      limit: String(limit),
-      search: debouncedLocationSearch,
-    });
-    const res = await fetch(`/api/locations?${params.toString()}`);
-    const { locations, total } = await res.json();
-    setLocations(locations);
-    setTotalLocationPages(Math.ceil(total / limit));
+    setLocationsLoading(true);
+    try {
+      const params = new URLSearchParams({
+        page: String(locationPage),
+        limit: String(8),
+        search: debouncedLocationSearch,
+      });
+      const res = await fetch(`/api/locations?${params.toString()}`);
+      if (!res.ok) {
+        setLocations([]);
+        setTotalLocationPages(0);
+        return;
+      }
+      const { locations, total } = await res.json();
+      setLocations(locations);
+      setTotalLocationPages(Math.ceil(total / limit));
+    } finally {
+      setLocationsLoading(false);
+    }
   };
 
   const handleSave = () => {
@@ -102,6 +141,8 @@ const AssignGuardModal: React.FC<AssignGuardModalProps> = ({ isOpen, onClose, on
     { header: 'Nombre', accessor: 'name' },
     { header: 'Cédula', accessor: 'dni' },
     { header: 'Cargo', accessor: 'rol', render: (item: Staff) => item.rol.name },
+    { header: 'Mes', accessor: 'month_count', render: (item: Staff) => item.month_count ?? 0 },
+    { header: 'Última', accessor: 'last_date', render: (item: Staff) => item.last_date ? new Date(item.last_date).toLocaleDateString('es-ES') : '—' },
   ];
 
   const locationColumns: { header: string; accessor: keyof Location; render?: (item: Location) => React.ReactNode }[] = [
@@ -109,19 +150,31 @@ const AssignGuardModal: React.FC<AssignGuardModalProps> = ({ isOpen, onClose, on
   ];
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} title={`Asignar Guardia - ${date.toLocaleDateString('es-ES')}`} size="4xl">
+  <Modal isOpen={isOpen} onClose={handleClose} title={`Asignar Guardia - ${date.toLocaleDateString('es-ES')}`} size="6xl">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Staff Selection */}
         <div className="flex flex-col gap-4">
           <h3 className="text-lg font-semibold">1. Seleccionar Funcionario</h3>
           <SearchBar placeholder="Buscar funcionario..." onSearchChange={setStaffSearch} />
+          <div className="flex items-center gap-4 text-sm">
+            <label className="flex items-center gap-2">
+              <input type="checkbox" checked={prioritize} onChange={(e) => { setPrioritize(e.target.checked); setStaffPage(1); }} />
+              Priorizar no repetidos este mes
+            </label>
+          </div>
           <div className="border rounded-md">
-            <Table
-              columns={staffColumns}
-              data={staffList}
-              onRowClick={setSelectedStaff}
-              selectedRow={selectedStaff}
-            />
+            {staffLoading ? (
+              <div className="flex items-center justify-center h-40">
+                <img src="/spinner.svg" alt="Cargando funcionarios" className="w-10 h-10" />
+              </div>
+            ) : (
+              <Table
+                columns={staffColumns}
+                data={staffList}
+                onRowClick={setSelectedStaff}
+                selectedRow={selectedStaff}
+              />
+            )}
           </div>
           <div className="flex justify-between items-center">
             <button onClick={() => setStaffPage(p => Math.max(1, p - 1))} disabled={staffPage === 1}>Anterior</button>
@@ -134,13 +187,24 @@ const AssignGuardModal: React.FC<AssignGuardModalProps> = ({ isOpen, onClose, on
         <div className="flex flex-col gap-4">
           <h3 className="text-lg font-semibold">2. Seleccionar Ubicación</h3>
           <SearchBar placeholder="Buscar ubicación..." onSearchChange={setLocationSearch} />
-          <div className="border rounded-md">
-            <Table
-              columns={locationColumns}
-              data={locations}
-              onRowClick={setSelectedLocation}
-              selectedRow={selectedLocation}
-            />
+          <div className="flex items-center gap-4 text-sm">
+            <label className="flex items-center gap-2">
+              &nbsp;
+            </label>
+          </div>
+          <div className="border rounded-md" style={{ maxHeight: 408, overflowY: 'auto' }}>
+            {locationsLoading ? (
+              <div className="flex items-center justify-center h-40">
+                <img src="/spinner.svg" alt="Cargando ubicaciones" className="w-10 h-10" />
+              </div>
+            ) : (
+              <Table
+                columns={locationColumns}
+                data={locations}
+                onRowClick={setSelectedLocation}
+                selectedRow={selectedLocation}
+              />
+            )}
           </div>
           <div className="flex justify-between items-center">
             <button onClick={() => setLocationPage(p => Math.max(1, p - 1))} disabled={locationPage === 1}>Anterior</button>

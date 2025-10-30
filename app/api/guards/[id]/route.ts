@@ -43,8 +43,8 @@ export async function PUT(
       return NextResponse.json({ error: "Invalid id" }, { status: 400 });
     }
 
-    const body = await req.json();
-    const { assignedDate, assignedStaffId, locationId, rolId, notes } = body ?? {};
+  const body = await req.json();
+  const { assignedDate, assignedStaffId, locationId, rolId, notes } = body ?? {};
 
     if (!assignedDate || !assignedStaffId || !locationId || !rolId) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -56,6 +56,23 @@ export async function PUT(
     }
 
     const newDate = new Date(assignedDate);
+
+    // Prevent double-booking on update: if changing staff or date, ensure no duplicate for that staff in the same day
+    if (existing.assignedStaffId !== assignedStaffId || existing.assignedDate.getTime() !== newDate.getTime()) {
+      const conflict = await prisma.guardDuty.count({
+        where: {
+          assignedStaffId,
+          assignedDate: newDate,
+          NOT: { id: guardId },
+        },
+      });
+      if (conflict > 0) {
+        return NextResponse.json(
+          { error: "El funcionario ya tiene una guardia asignada ese día." },
+          { status: 409 }
+        );
+      }
+    }
 
     const locationChanged = existing.locationId !== locationId;
     if (existing.assignedStaffId !== assignedStaffId || locationChanged) {

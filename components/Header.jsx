@@ -36,9 +36,9 @@ export default function Header() {
   }, []);
 
   const navItems = [
-    { href: "/home/localizaciones", label: "Servicios" },
-    { href: "/home/trabajadores", label: "Funcionarios" },
     { href: "/home/guardias", label: "Guardias" },
+    { href: "/home/trabajadores", label: "Funcionarios" },
+    { href: "/home/localizaciones", label: "Servicios" },
     { href: "/home/roles", label: "Cargos" },
   ];
 

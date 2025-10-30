@@ -1,6 +1,7 @@
 // app/api/guards/[id]/route.ts
 import { NextResponse, type NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
+import type { Prisma } from "@prisma/client";
 
 type Params = { id: string };
 
@@ -76,7 +77,7 @@ export async function PUT(
 
     const locationChanged = existing.locationId !== locationId;
     if (existing.assignedStaffId !== assignedStaffId || locationChanged) {
-      const updated = await prisma.$transaction(async (tx: typeof prisma) => {
+      const updated = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
         const upd = await tx.guardDuty.update({
           where: { id: guardId },
           data: {
@@ -170,7 +171,7 @@ export async function PUT(
     }
 
     // Staff unchanged: update duty then recompute that staff's last_guard
-  const updated = await prisma.$transaction(async (tx: typeof prisma) => {
+  const updated = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const upd = await tx.guardDuty.update({
         where: { id: guardId },
         data: {
@@ -229,7 +230,7 @@ export async function DELETE(
       return NextResponse.json({ error: "Guard duty not found" }, { status: 404 });
     }
 
-  await prisma.$transaction(async (tx: typeof prisma) => {
+  await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       await tx.guardDuty.delete({ where: { id: guardId } });
       await tx.staff.update({
         where: { id: existing.assignedStaffId },

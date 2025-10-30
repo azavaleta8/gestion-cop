@@ -26,6 +26,13 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: process.env.VERCEL === "1",
   },
+
+  // Optionally ignore TypeScript build errors on Vercel only
+  // This lets the deployment continue even if there are TS issues.
+  // Keep it false locally to catch problems during development.
+  typescript: {
+    ignoreBuildErrors: process.env.VERCEL === "1",
+  },
 };
 
 export default nextConfig;

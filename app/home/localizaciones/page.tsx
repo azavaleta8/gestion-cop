@@ -7,7 +7,6 @@ import { Input } from "@heroui/react";
 import SearchBar from "@/components/SearchBar";
 import Modal from "@/components/Modal";
 import Table from "@/components/Table";
-import Loader from "@/components/Loader";
 import useDebounce from "@/lib/hooks/useDebounce";
 import LocationProfileModal from "@/components/LocationProfileModal";
 

@@ -105,18 +105,21 @@ const StaffProfileModal: React.FC<Props> = ({ isOpen, onClose, encodedId }) => {
           <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
             {/* Sección PERFIL */}
             <div
-              className="md:col-span-2 min-h-[400px] bg-gradient-to-br from-white
-                to-gray-50 rounded-2xl p-6 shadow-xl border border-gray-100">
+              className="md:col-span-2 min-h-[400px] bg-gradient-to-br
+                from-white to-gray-50 rounded-2xl p-6 shadow-xl border
+                border-gray-100">
               {/* Header (desacoplado) */}
               <StaffProfileHeader staff={staff} />
 
               {/* Información (desacoplada) */}
-              <StaffProfileInfo staff={staff} lastCompletedGuard={lastCompletedGuard} />
+              <StaffProfileInfo staff={staff}
+              lastCompletedGuard={lastCompletedGuard} />
             </div>
 
             {/* Sección HISTORIAL */}
             <div className="md:col-span-3">
-              <StaffHistory duties={duties} page={page} totalPages={totalPages} setPage={setPage} />
+              <StaffHistory duties={duties} page={page} totalPages={totalPages}
+              setPage={setPage} />
             </div>
           </div>
         )}

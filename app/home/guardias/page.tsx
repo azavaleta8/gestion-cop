@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import Image from 'next/image';
 import AssignGuardModal from '@/components/AssignGuardModal';
-import { UserCircleIcon, CalendarIcon, MapPinIcon, DevicePhoneMobileIcon, IdentificationIcon, PlusCircleIcon, TrashIcon, PencilIcon } from '@heroicons/react/24/outline';
+import { UserCircleIcon, MapPinIcon, DevicePhoneMobileIcon, IdentificationIcon, PlusCircleIcon, TrashIcon, PencilIcon } from '@heroicons/react/24/outline';
 
 // Helper to get the start of the week (Tuesday)
 const getStartOfWeek = (date: Date) => {
@@ -54,7 +55,7 @@ const GuardiasPage = () => {
 
 
 
-  const fetchGuardsForWeek = async () => {
+  const fetchGuardsForWeek = useCallback(async () => {
     const startDate = new Date(currentWeekStart);
     startDate.setHours(0, 0, 0, 0); // Asegura que la consulta empiece al inicio del día
     const endDate = new Date(startDate);
@@ -109,12 +110,12 @@ const GuardiasPage = () => {
           return { date, guards: [] };
       });
       setAssignments(newAssignments);
-    }
-  };
+      }
+    }, [currentWeekStart]);
 
   useEffect(() => {
     fetchGuardsForWeek();
-  }, [currentWeekStart]);
+  }, [fetchGuardsForWeek]);
 
   const handlePrevWeek = () => {
     const newWeekStart = new Date(currentWeekStart);
@@ -253,11 +254,18 @@ const GuardiasPage = () => {
                   dailyAssignment.guards.map(guard => (
                     <div key={guard.id} className="w-full grid grid-cols-1 md:grid-cols-5 items-center gap-4 bg-gray-50 p-3 rounded-lg">
                       <div className="flex items-center justify-center md:justify-start">
-                        {guard.staff.image ? (
-                            <img src={`data:image/png;base64,${guard.staff.image}`} alt={guard.staff.name} className="w-12 h-12 rounded-full object-cover" />
-                        ) : (
-                            <UserCircleIcon className="w-12 h-12 text-gray-400" />
-                        )}
+            {guard.staff.image ? (
+              <Image
+                src={`data:image/png;base64,${guard.staff.image}`}
+                alt={guard.staff.name}
+                width={48}
+                height={48}
+                className="w-12 h-12 rounded-full object-cover"
+                unoptimized
+              />
+            ) : (
+              <UserCircleIcon className="w-12 h-12 text-gray-400" />
+            )}
                       </div>
                       <div>
                         <p className="font-semibold text-gray-900">{guard.staff.name}</p>

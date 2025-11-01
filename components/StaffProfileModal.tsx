@@ -44,6 +44,74 @@ const StaffProfileModal: React.FC<Props> = ({ isOpen, onClose, encodedId }) => {
   const [limit] = useState(8);
   const [total, setTotal] = useState(0);
 
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return '—';
+    const date = new Date(dateString);
+    const days = ['DOM', 'LUN', 'MAR', 'MIE', 'JUE', 'VIE', 'SAB'];
+    const day = days[date.getDay()];
+    const dayNum = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day} - ${dayNum}/${month}/${year}`;
+  };
+
+  const getTimeAgo = (dateString: string | null) => {
+    if (!dateString) return '—';
+    
+    const now = new Date();
+    const assignedDate = new Date(dateString);
+    const diffInMs = now.getTime() - assignedDate.getTime();
+    const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+    
+    // Fechas futuras (números negativos)
+    if (diffInDays < 0) {
+      const absDays = Math.abs(diffInDays);
+      // Menos de 7 días en el futuro: mostrar días
+      if (absDays < 7) {
+        return absDays === 1 ? 'Dentro de 1 día' : `Dentro de ${absDays} días`;
+      }
+      // 7 días o más pero menos de 30 días: mostrar semanas
+      const weeks = Math.floor(absDays / 7);
+      if (absDays < 30) {
+        return weeks === 1 ? 'Dentro de 1 semana' : `Dentro de ${weeks} semanas`;
+      }
+      // 30 días o más pero menos de 365 días: mostrar meses
+      const months = Math.floor(absDays / 30);
+      if (absDays < 365) {
+        return months === 1 ? 'Dentro de 1 mes' : `Dentro de ${months} meses`;
+      }
+      // 365 días o más: mostrar años
+      const years = Math.floor(absDays / 365);
+      return years === 1 ? 'Dentro de 1 año' : `Dentro de ${years} años`;
+    }
+    
+    // Caso especial: hoy (0 días)
+    if (diffInDays === 0) {
+      return 'Hoy';
+    }
+    
+    // Menos de 7 días: mostrar días
+    if (diffInDays < 7) {
+      return diffInDays === 1 ? 'Hace 1 día' : `Hace ${diffInDays} días`;
+    }
+    
+    // 7 días o más pero menos de 30 días: mostrar semanas
+    const weeks = Math.floor(diffInDays / 7);
+    if (diffInDays < 30) {
+      return weeks === 1 ? 'Hace 1 semana' : `Hace ${weeks} semanas`;
+    }
+    
+    // 30 días o más pero menos de 365 días (12 meses): mostrar meses
+    const months = Math.floor(diffInDays / 30);
+    if (diffInDays < 365) {
+      return months === 1 ? 'Hace 1 mes' : `Hace ${months} meses`;
+    }
+    
+    // 365 días o más (12 meses o más): mostrar años
+    const years = Math.floor(diffInDays / 365);
+    return years === 1 ? 'Hace 1 año' : `Hace ${years} años`;
+  };
+
   const fetchData = async () => {
     if (!encodedId) return;
     setLoading(true);
@@ -106,7 +174,7 @@ const StaffProfileModal: React.FC<Props> = ({ isOpen, onClose, encodedId }) => {
                 <div className="text-sm text-gray-600">Teléfono: {staff.phone ?? '—'}</div>
                 <div className="text-sm text-gray-600">Cargo: {staff.rol?.name ?? '—'}</div>
                 <div className="text-sm text-gray-600">Asignaciones: {staff.total_assignments ?? 0}</div>
-                <div className="text-sm text-gray-600">Última guardia: {staff.last_guard ? staff.last_guard : '—'}</div>
+                <div className="text-sm text-gray-600">Última guardia: <span className="font-mono">{formatDate(staff.last_guard ?? null)}</span></div>
               </div>
             </div>
 
@@ -118,19 +186,17 @@ const StaffProfileModal: React.FC<Props> = ({ isOpen, onClose, encodedId }) => {
                 <table className="w-full text-sm table-auto">
                   <thead>
                     <tr className="text-left border-b">
-                      <th className="py-2">Fecha</th>
+                      <th className="py-2 font-mono">Fecha</th>
+                      <th className="py-2">Tiempo</th>
                       <th className="py-2">Ubicación</th>
-                      <th className="py-2">Cargo</th>
-                      <th className="py-2">Asignado</th>
                     </tr>
                   </thead>
                   <tbody>
                     {duties.map((d) => (
                       <tr key={d.id} className="border-b">
-                        <td className="py-2">{d.assignedDate ? new Date(d.assignedDate).toLocaleDateString('es-ES') : '—'}</td>
+                        <td className="py-2 font-mono">{formatDate(d.assignedDate)}</td>
+                        <td className="py-2">{getTimeAgo(d.assignedDate)}</td>
                         <td className="py-2">{d.location?.name ?? '—'}</td>
-                        <td className="py-2">{d.rol?.name ?? '—'}</td>
-                        <td className="py-2">{d.assignedStaff ? d.assignedStaff.name : '—'}</td>
                       </tr>
                     ))}
                   </tbody>

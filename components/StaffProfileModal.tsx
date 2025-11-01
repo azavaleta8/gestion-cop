@@ -2,17 +2,18 @@
 
 import React, { useEffect, useState } from "react";
 import Modal from "@/components/Modal";
-import StaffProfileHeader from "@/components/StaffProfileHeader";
-import StaffProfileInfo from "@/components/StaffProfileInfo";
-import StaffHistory from "@/components/StaffHistory";
-import { formatDate, getTimeAgo } from '@/lib/date';
+import StaffProfileHeader from "@/components/staff/StaffProfileHeader";
+import StaffProfileInfo from "@/components/staff/StaffProfileInfo";
+import StaffHistory from "@/components/staff/StaffHistory";
+import { guardHistoryUrl } from '@/lib/consts';
+import { getLastCompletedGuard } from '@/lib/date';
 
 interface Rol {
   id: number;
   name: string;
 }
 
-interface Funcionario {
+interface StaffMember {
   id: number;
   name: string;
   dni: string;
@@ -28,8 +29,8 @@ interface GuardDuty {
   assignedDate: string | null;
   startTime?: string | null;
   endTime?: string | null;
-  assignedStaff?: Funcionario | null;
-  actualStaff?: Funcionario | null;
+  assignedStaff?: StaffMember | null;
+  actualStaff?: StaffMember | null;
   location?: { id: number; name: string } | null;
   rol?: Rol | null;
 }
@@ -41,7 +42,7 @@ interface Props {
 }
 
 const StaffProfileModal: React.FC<Props> = ({ isOpen, onClose, encodedId }) => {
-  const [staff, setStaff] = useState<Funcionario | null>(null);
+  const [staff, setStaff] = useState<StaffMember | null>(null);
   const [duties, setDuties] = useState<GuardDuty[]>([]);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
@@ -62,11 +63,11 @@ const StaffProfileModal: React.FC<Props> = ({ isOpen, onClose, encodedId }) => {
         setTotal(0);
         return;
       }
-      const { funcionario } = await staffRes.json();
-      setStaff(funcionario);
+      const { funcionario: staffMember } = await staffRes.json();
+      setStaff(staffMember);
 
-      if (funcionario && funcionario.dni) {
-        const historyRes = await fetch(`/api/guards/history/${encodeURIComponent(funcionario.dni)}?page=${page}&limit=${limit}&sortBy=assignedDate&sortDir=desc`);
+      if (staffMember && staffMember.dni) {
+        const historyRes = await fetch(guardHistoryUrl(staffMember.dni, page, limit));
         if (historyRes.ok) {
           const json = await historyRes.json();
           setDuties(Array.isArray(json.duties) ? json.duties : []);
@@ -93,28 +94,7 @@ const StaffProfileModal: React.FC<Props> = ({ isOpen, onClose, encodedId }) => {
 
   const totalPages = Math.max(1, Math.ceil(total / limit));
 
-  // Función para obtener la última guardia realizada (fecha en el pasado o hoy)
-  const getLastCompletedGuard = () => {
-    if (!duties || duties.length === 0) return null;
-    
-    const now = new Date();
-    now.setHours(0, 0, 0, 0); // Comparar solo fechas sin horas
-    
-    // Buscar la primera guardia cuya fecha sea <= hoy
-    for (const duty of duties) {
-      if (!duty.assignedDate) continue;
-      const dutyDate = new Date(duty.assignedDate);
-      dutyDate.setHours(0, 0, 0, 0);
-      
-      if (dutyDate <= now) {
-        return duty.assignedDate;
-      }
-    }
-    
-    return null;
-  };
-
-  const lastCompletedGuard = getLastCompletedGuard();
+  const lastCompletedGuard = getLastCompletedGuard(duties);
 
   return (
   <Modal isOpen={isOpen} onClose={onClose} title="Perfil" size="4xl">

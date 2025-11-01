@@ -52,3 +52,22 @@ export const getTimeAgo = (dateString: string | null) => {
   const years = Math.floor(diffInDays / 365);
   return years === 1 ? 'Hace 1 año' : `Hace ${years} años`;
 };
+
+export const getLastCompletedGuard = (
+  duties: Array<{ assignedDate?: string | null; start?: string | null; startTime?: string | null }>
+): string | null => {
+  if (!duties || duties.length === 0) return null;
+
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+
+  for (const duty of duties) {
+    const dateStr = duty.assignedDate ?? duty.start ?? duty.startTime ?? null;
+    if (!dateStr) continue;
+    const dutyDate = new Date(dateStr);
+    dutyDate.setHours(0, 0, 0, 0);
+    if (dutyDate <= now) return dateStr;
+  }
+
+  return null;
+};

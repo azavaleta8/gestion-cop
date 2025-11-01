@@ -2,6 +2,11 @@
 
 import React, { useEffect, useState } from "react";
 import Modal from "@/components/Modal";
+import LocationProfileHeader from '@/components/location/LocationProfileHeader';
+import LocationProfileInfo from '@/components/location/LocationProfileInfo';
+import LocationHistory from '@/components/location/LocationHistory';
+import { guardHistoryByLocationUrl } from '@/lib/consts';
+import { getLastCompletedGuard } from '@/lib/date';
 
 interface Rol { id: number; name: string }
 interface Staff { id: number; name: string }
@@ -51,7 +56,8 @@ const LocationProfileModal: React.FC<Props> = ({ isOpen, onClose, locationId }) 
       const { location } = await locRes.json();
       setLocation(location);
 
-      const historyRes = await fetch(`/api/guards/history/location/${locationId}?page=${page}&limit=${limit}&sortBy=assignedDate&sortDir=desc`);
+      // use centralised URL builder for location history
+      const historyRes = await fetch(guardHistoryByLocationUrl(locationId, page, limit));
       if (historyRes.ok) {
         const json = await historyRes.json();
         setDuties(Array.isArray(json.duties) ? json.duties : []);
@@ -77,66 +83,33 @@ const LocationProfileModal: React.FC<Props> = ({ isOpen, onClose, locationId }) 
 
   const totalPages = Math.max(1, Math.ceil(total / limit));
 
+  const lastCompletedGuard = getLastCompletedGuard(duties);
+
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={location ? `Servicio — ${location.name}` : "Servicio"} size="xl">
-      <div className="space-y-4">
+    <Modal isOpen={isOpen} onClose={onClose} title="Servicio" size="4xl">
+      <div className="space-y-4 max-h-[77vh] overflow-y-auto">
         {loading && <div>Cargando...</div>}
 
         {!loading && location && (
-          <div>
-            <div className="flex gap-4 items-center mb-4">
-              {location.image ? (
-                <img src={`data:image/png;base64,${location.image}`} alt={location.name} className="w-16 h-16 rounded-full object-cover" />
-              ) : (
-                <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center">📍</div>
-              )}
-              <div>
-                <div className="text-lg font-semibold">{location.name}</div>
-                <div className="text-sm text-gray-600">Asignaciones: {location.total_assignments ?? 0}</div>
-                <div className="text-sm text-gray-600">Última guardia: {location.last_guard ? location.last_guard : '—'}</div>
-              </div>
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
+            {/* PROFILE */}
+            <div className="md:col-span-2 min-h-[400px] bg-gradient-to-br
+                from-white to-gray-50 rounded-2xl p-3 shadow-md border
+                border-gray-100">
+              <LocationProfileHeader
+                location={location} />
+              <LocationProfileInfo
+                location={location}
+                lastCompletedGuard={lastCompletedGuard} />
             </div>
 
-            <h4 className="font-semibold mb-2">Guardias registradas</h4>
-            {duties.length === 0 ? (
-              <div className="text-sm text-gray-600">No hay guardias registradas para este servicio.</div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm table-auto">
-                  <thead>
-                    <tr className="text-left border-b">
-                      <th className="py-2">Fecha</th>
-                      <th className="py-2">Cargo</th>
-                      <th className="py-2">Funcionario</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {duties.map((d) => (
-                      <tr key={d.id} className="border-b">
-                        <td className="py-2">{d.assignedDate ? new Date(d.assignedDate).toLocaleDateString('es-ES') : '—'}</td>
-                        <td className="py-2">{d.rol?.name ?? '—'}</td>
-                        <td className="py-2">{d.assignedStaff ? d.assignedStaff.name : '—'}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-
-            <div className="flex items-center justify-between mt-4">
-              <div className="text-sm text-gray-600">Página {page} de {totalPages}</div>
-              <div className="flex gap-2">
-                <button
-                  className="px-3 py-1 rounded bg-gray-200"
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={page <= 1}
-                >Anterior</button>
-                <button
-                  className="px-3 py-1 rounded bg-gray-200"
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={page >= totalPages}
-                >Siguiente</button>
-              </div>
+            {/* HISTORY */}
+            <div className="md:col-span-3">
+              <LocationHistory
+                duties={duties}
+                page={page}
+                totalPages={totalPages}
+                setPage={setPage} />
             </div>
           </div>
         )}

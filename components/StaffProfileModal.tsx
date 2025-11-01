@@ -98,28 +98,30 @@ const StaffProfileModal: React.FC<Props> = ({ isOpen, onClose, encodedId }) => {
 
   return (
   <Modal isOpen={isOpen} onClose={onClose} title="Perfil" size="4xl">
-      <div className="space-y-4 max-h-[75vh] overflow-y-auto">
+      <div className="space-y-4 max-h-[77vh] overflow-y-auto">
         {loading && <div>Cargando...</div>}
 
         {!loading && staff && (
           <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
-            {/* Sección PERFIL */}
+            {/* PROFILE */}
             <div
               className="md:col-span-2 min-h-[400px] bg-gradient-to-br
-                from-white to-gray-50 rounded-2xl p-6 shadow-xl border
+                from-white to-gray-50 rounded-2xl p-3 shadow-md border
                 border-gray-100">
-              {/* Header (desacoplado) */}
-              <StaffProfileHeader staff={staff} />
-
-              {/* Información (desacoplada) */}
-              <StaffProfileInfo staff={staff}
-              lastCompletedGuard={lastCompletedGuard} />
+              <StaffProfileHeader
+                staff={staff} />
+              <StaffProfileInfo
+                staff={staff}
+                lastCompletedGuard={lastCompletedGuard} />
             </div>
 
-            {/* Sección HISTORIAL */}
+            {/* HISTORY */}
             <div className="md:col-span-3">
-              <StaffHistory duties={duties} page={page} totalPages={totalPages}
-              setPage={setPage} />
+              <StaffHistory
+                duties={duties}
+                page={page}
+                totalPages={totalPages}
+                setPage={setPage} />
             </div>
           </div>
         )}

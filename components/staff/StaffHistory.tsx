@@ -23,7 +23,7 @@ interface Props {
 const StaffHistory: React.FC<Props> = ({ duties, page, totalPages, setPage }) => {
   return (
     <div>
-      <h3 className="text-lg font-semibold mb-4 text-gray-800">HISTORIAL</h3>
+      <h3 className="text-lg font-semibold mb-2 text-gray-800">HISTORIAL</h3>
       {duties.length === 0 ? (
         <div className="text-sm text-gray-600">No hay guardias registradas para este funcionario.</div>
       ) : (

@@ -39,7 +39,7 @@ export default function Header() {
     { href: "/home/guardias", label: "Guardias" },
     { href: "/home/trabajadores", label: "Funcionarios" },
     { href: "/home/localizaciones", label: "Servicios" },
-    { href: "/home/roles", label: "Cargos" },
+    { href: "/home/roles", label: "Rangos" },
   ];
 
   const handleLogout = async () => {

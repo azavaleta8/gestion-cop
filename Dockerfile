@@ -23,5 +23,5 @@ ENV NODE_ENV=development
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-# Start the development server 
+# Start the development server
 CMD ["npm", "run", "dev"]

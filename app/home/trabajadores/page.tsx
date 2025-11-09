@@ -1,8 +1,12 @@
 "use client";
 
-import { PlusIcon, PhotoIcon, UserCircleIcon } from "@heroicons/react/24/solid";
-import { useState, useEffect } from "react";
-import { useRouter } from 'next/navigation';
+import {
+    PlusCircleIcon,
+    PhotoIcon,
+    UserCircleIcon,
+    UserIcon
+} from "@heroicons/react/24/solid";
+import { useState, useEffect, useRef } from "react";
 import { encode } from "js-base64";
 import { Input, Button } from "@heroui/react";
 import useDebounce from "@/lib/hooks/useDebounce";
@@ -10,6 +14,8 @@ import SearchBar from "@/components/SearchBar";
 import Modal from "@/components/Modal";
 import StaffProfileModal from "@/components/StaffProfileModal";
 import Table from "@/components/Table";
+import Image from 'next/image';
+import { Tooltip } from 'react-tooltip';
 
 interface Rol {
     id: number;
@@ -48,8 +54,9 @@ const TrabajadoresPage = () => {
     const [profileModalOpen, setProfileModalOpen] = useState(false);
     const [selectedEncodedId, setSelectedEncodedId] = useState<string | null>(null);
 
-    const router = useRouter();
     const debouncedSearch = useDebounce(search, 500);
+
+    const nameInputRef = useRef<HTMLInputElement | null>(null);
 
     const fetchStaffData = async () => {
         setLoading(true);
@@ -96,19 +103,19 @@ const TrabajadoresPage = () => {
     useEffect(() => {
         setCurrentPage(1);
     }, [debouncedSearch]);
-    
+
     // Transforma una imagen a base64
     const fileToBase64 = (file: File): Promise<string> => new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => {
-        if (typeof reader.result === 'string') {
-            resolve(reader.result);
-        } else {
-            reject(new Error('Failed to convert file to base64 string'));
-        }
-      };
-      reader.onerror = reject;
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => {
+            if (typeof reader.result === 'string') {
+                resolve(reader.result);
+            } else {
+                reject(new Error('Failed to convert file to base64 string'));
+            }
+        };
+        reader.onerror = reject;
     });
 
     // Maneja el envío del formulario para agregar una nueva localización
@@ -155,7 +162,21 @@ const TrabajadoresPage = () => {
         }
     };
 
-    const formularioCompleto = newName.trim() !== "" && newDni.trim() !== "" && newPhone.trim() !== "" &&  newRol !== "";
+    // Al abrir la modal, enfocar el primer input (nombre)
+    useEffect(() => {
+        if (showForm) {
+            requestAnimationFrame(() => {
+                if (nameInputRef.current) {
+                    nameInputRef.current.focus();
+                } else {
+                    const el = document.getElementById('staff-name-input') as HTMLInputElement | null;
+                    el?.focus();
+                }
+            });
+        }
+    }, [showForm]);
+
+    const formularioCompleto = newName.trim() !== "" && newDni.trim() !== "" && newPhone.trim() !== "" && newRol !== "";
 
     const columns: { header: string; accessor: keyof Funcionario; render?: (item: Funcionario) => React.ReactNode; sortable?: boolean; sortValue?: (item: Funcionario) => string | number | Date | null | undefined }[] = [
         {
@@ -163,10 +184,12 @@ const TrabajadoresPage = () => {
             accessor: 'image',
             render: (item: Funcionario) => (
                 item.image ? (
-                    <img
+                    <Image
                         src={`data:image/png;base64,${item.image}`}
                         alt={`Foto de ${item.name}`}
-                        className="w-10 h-10 rounded-full object-cover"
+                        width={40}
+                        height={40}
+                        className="w-full h-full rounded-full object-cover"
                     />
                 ) : (
                     <UserCircleIcon className="w-10 h-10 text-gray-400" />
@@ -177,40 +200,72 @@ const TrabajadoresPage = () => {
         { header: 'Nombre', accessor: 'name', sortable: true, sortValue: (i) => i.name?.toLowerCase() },
         { header: 'Cédula', accessor: 'dni', sortable: true, sortValue: (i) => Number(i.dni) || 0 },
         { header: 'Teléfono', accessor: 'phone' },
-        { header: 'Cargo', accessor: 'rol', render: (item: Funcionario) => item.rol.name },
-        { header: 'Asignaciones', accessor: 'total_assignments', render: (item: Funcionario) => item.total_assignments ?? 0, sortable: true, sortValue: (i) => i.total_assignments ?? 0 },
-        { header: 'Última guardia', accessor: 'last_guard', render: (i: Funcionario) => i.last_guard ? new Date(i.last_guard).toLocaleDateString('es-ES') : '—', sortable: true, sortValue: (i) => (i.last_guard ? new Date(i.last_guard) : null) },
-        { header: 'Opciones', accessor: 'id', render: (item: Funcionario) => (
-            <Button
-                color="primary"
-                className="px-4 py-2 text-white rounded transition flex items-center gap-2 bg-green-600 hover:bg-green-700"
-                radius="sm"
-                size="md"
-                onPress={() => {
-                    const encodedId = encode(item.id.toString());
-                    setSelectedEncodedId(encodedId);
-                    setProfileModalOpen(true);
-                }}
-            >
-                Ver Perfil
-            </Button>
-        )}
+        { header: 'Rango', accessor: 'rol', render: (item: Funcionario) => item.rol.name },
+        { header: 'Servicios', accessor: 'total_assignments', render: (item: Funcionario) => item.total_assignments ?? 0, sortable: true, sortValue: (i) => i.total_assignments ?? 0 },
+        {
+            header: 'Última guardia',
+            accessor: 'last_guard',
+            render: (i: Funcionario) => i.last_guard ? (
+                <span className="font-mono">
+                    {new Date(i.last_guard).toLocaleDateString('es-ES', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric'
+                    })}
+                </span>
+            ) : (
+                <span className="font-mono text-gray-400">—</span>
+            ),
+            sortable: true,
+            sortValue: (i) => (i.last_guard ? new Date(i.last_guard) : null)
+        },
+        /* {
+            header: 'Opciones', accessor: 'id', render: (item: Funcionario) => (
+                <Button
+                    data-tooltip-id="profile-cop-button"
+                    data-tooltip-content={"Visualizar información del funcionario"}
+                    color="primary"
+                    className="px-4 py-2 text-white font-semibold rounded 
+                    transition flex items-center gap-2 bg-green-600
+                    hover:bg-green-700"
+                    radius="sm"
+                    size="md"
+                    onPress={() => {
+                        const encodedId = encode(item.id.toString());
+                        setSelectedEncodedId(encodedId);
+                        setProfileModalOpen(true);
+                    }}
+                >
+                    <UserIcon className="w-5 h-5" />
+                    Perfil
+                </Button>
+            )
+        } */
     ];
 
     return (
         <>
             <h1 className="text-2xl font-bold mb-5">Funcionarios</h1>
-  
-            <div className="flex justify-between items-center mb-6">
+
+            <div className="flex gap-4 items-center mb-6">
                 <div className="w-1/3">
                     <SearchBar
                         placeholder="Buscar por nombre o cédula..."
                         onSearchChange={setSearch}
                     />
                 </div>
-                <button className={`px-4 py-2 text-white rounded transition flex items-center gap-2 ${
-                    showForm ? "bg-red-600 hover:bg-red-700" : "bg-green-600 hover:bg-green-700"
-                }`}
+                <button
+                    data-tooltip-id="register-cop-button"
+                    data-tooltip-content={"Crear nuevo funcionario"}
+                    className={`mb-4 px-3 py-2 text-white font-semibold rounded
+                        transition flex items-center gap-2 hover:cursor-pointer
+                        ${showForm
+                            ?
+                            "bg-red-600 hover:bg-red-700"
+                            :
+                            "bg-green-600 hover:bg-green-700"
+                        }`
+                    }
                     onClick={() => {
                         if (showForm) {
                             setNewName("");
@@ -225,8 +280,8 @@ const TrabajadoresPage = () => {
                 >
                     {showForm ? "Cancelar" : (
                         <>
-                            <PlusIcon className="w-5 h-5" />
-                            Agregar nuevo funcionario
+                            <PlusCircleIcon className="w-5 h-5 font-semibold" />
+                            Crear
                         </>
                     )}
                 </button>
@@ -235,35 +290,46 @@ const TrabajadoresPage = () => {
             <Modal
                 isOpen={showForm}
                 onClose={() => setShowForm(false)}
-                title="Agregar Nuevo Funcionario"
+                title="Registrar Nuevo Funcionario"
             >
                 <form
                     onSubmit={handleSubmit}
                     className="flex flex-col gap-4"
                 >
                     <Input
+                        autoComplete="off"
+                        id="staff-name-input"
                         label="Nombre del funcionario"
                         placeholder="Ej. Pedro Pérez"
                         value={newName}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewName(e.target.value)}
+                        onChange={(
+                            e: React.ChangeEvent<HTMLInputElement>) =>
+                            setNewName(e.target.value.toUpperCase()
+                            )}
                     />
                     <Input
+                        autoComplete="off"
                         type="text"
                         label="Cédula del funcionario"
                         placeholder="Ej. 12345678"
                         value={newDni}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                            const soloNumeros = e.target.value.replace(/\D/g, '');
+                        onChange={(
+                            e: React.ChangeEvent<HTMLInputElement>) => {
+                            const soloNumeros =
+                                e.target.value.replace(/\D/g, '');
                             setNewDni(soloNumeros);
                         }}
                     />
                     <Input
+                        autoComplete="off"
                         type="text"
                         label="Teléfono del funcionario"
-                        placeholder="Ej. 04123456789"
+                        placeholder="Ej. 4123456789"
                         value={newPhone}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                            const soloNumeros = e.target.value.replace(/\D/g, '');
+                        onChange={(
+                            e: React.ChangeEvent<HTMLInputElement>) => {
+                            const soloNumeros =
+                                e.target.value.replace(/\D/g, '');
                             setNewPhone(soloNumeros);
                         }}
                     />
@@ -300,13 +366,12 @@ const TrabajadoresPage = () => {
                         />
                     </div>
                     <button
-                    type="submit"
-                    disabled={!formularioCompleto}
-                    className={`px-4 py-2 rounded text-white transition ${
-                        formularioCompleto
-                        ? "bg-blue-600 hover:bg-blue-700"
-                        : "bg-gray-400 cursor-not-allowed"
-                    }`}
+                        type="submit"
+                        disabled={!formularioCompleto}
+                        className={`px-4 py-2 rounded text-white transition ${formularioCompleto
+                            ? "bg-blue-600 hover:bg-blue-700"
+                            : "bg-gray-400 cursor-not-allowed"
+                            }`}
                     >
                         Guardar Funcionario
                     </button>
@@ -340,6 +405,25 @@ const TrabajadoresPage = () => {
                 isOpen={profileModalOpen}
                 onClose={() => setProfileModalOpen(false)}
                 encodedId={selectedEncodedId}
+            />
+
+            <Tooltip
+                id="register-cop-button"
+                place="bottom"
+                variant="info"
+                offset={10}
+            />
+            <Tooltip
+                id="profile-cop-button"
+                place="bottom"
+                variant="info"
+                offset={10}
+            />
+            <Tooltip
+                id="row-tooltip"
+                place="bottom"
+                variant="info"
+                offset={5}
             />
         </>
     );

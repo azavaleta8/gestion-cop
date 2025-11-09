@@ -14,8 +14,8 @@
     "@heroicons/react": "^2.2.0",
     "@heroui/react": "^2.8.2",
     "@prisma/client": "^6.16.2",
+    "exceljs": "^4.4.0",
     "framer-motion": "^12.23.12",
-  "exceljs": "^4.4.0",
     "js-base64": "^3.7.8",
     "next": "15.4.4",
     "next-auth": "^4.24.11",
@@ -23,6 +23,7 @@
     "react-dom": "19.1.0",
     "react-hook-form": "^7.62.0",
     "react-icons": "^5.5.0",
+    "react-tooltip": "^5.30.0",
     "sweetalert2": "^11.22.3"
   },
   "devDependencies": {

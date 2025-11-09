@@ -139,7 +139,7 @@ const Table = <T extends { id: number | string }>({
                           onClick={() => toggleSort(col.accessor, col.sortable)}
                           className="flex items-center gap-1 text-left"
                         >
-                          <span>{col.header}</span>
+                          <span className="uppercase text-center font-bold">{col.header}</span>
                           <span className="text-gray-400 text-xs">
                             {isActive ? ((isServerSort ? serverSortDir : sortDir) === 'asc' ? '▲' : '▼') : '↕'}
                           </span>
@@ -156,8 +156,10 @@ const Table = <T extends { id: number | string }>({
               {sortedData.map((item, rowIndex) => (
                 <tr
                   key={item.id}
+                  data-tooltip-id="row-tooltip"
+                  data-tooltip-content={`Hacer click para visualizar perfil de ${item.name}`}
                   onClick={() => onRowClick && onRowClick(item)}
-                  className={`cursor-pointer hover:bg-gray-100 ${
+                  className={`cursor-pointer hover:bg-green-200 ${
                     selectedRow?.id === item.id ? 'bg-blue-100' : ''
                   }`}
                 >

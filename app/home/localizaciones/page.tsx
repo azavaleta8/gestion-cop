@@ -1,7 +1,7 @@
 "use client";
 
 import { PlusIcon, PhotoIcon } from "@heroicons/react/24/solid";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Input } from "@heroui/react";
 import SearchBar from "@/components/SearchBar";
@@ -9,6 +9,7 @@ import Modal from "@/components/Modal";
 import Table from "@/components/Table";
 import useDebounce from "@/lib/hooks/useDebounce";
 import LocationProfileModal from "@/components/LocationProfileModal";
+import Image from 'next/image';
 
 interface Localizacion {
     id: string;
@@ -26,7 +27,7 @@ const LocalizacionesPage = () => {
     const [showForm, setShowForm] = useState(false);
     const [newName, setNewName] = useState("");
     const [newImage, setNewImage] = useState<File | null>(null);
-    
+
     const [totalLocalizaciones, setTotalLocalizaciones] = useState(0);
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -35,38 +36,40 @@ const LocalizacionesPage = () => {
 
     const [profileOpen, setProfileOpen] = useState(false);
     const [profileLocationId, setProfileLocationId] = useState<number | null>(null);
-    
+
     const router = useRouter();
     const debouncedSearch = useDebounce(search, 500);
+
+    const nameInputRef = useRef<HTMLInputElement | null>(null);
 
     const fetchLocationsData = async () => {
         setLoading(true);
         try {
-          const params = new URLSearchParams({
-              page: String(currentPage),
-              limit: String(itemsPerPage),
-              search: debouncedSearch,
-              sortBy: String(sortBy),
-              sortDir: sortDir,
-          });
-          const res = await fetch(`/api/locations?${params.toString()}`);
-          if (res.ok) {
-            const { locations, total } = await res.json(); 
-            if (locations) {
-                setLocalizaciones(Array.isArray(locations) ? locations : []);
-                setTotalLocalizaciones(total);
+            const params = new URLSearchParams({
+                page: String(currentPage),
+                limit: String(itemsPerPage),
+                search: debouncedSearch,
+                sortBy: String(sortBy),
+                sortDir: sortDir,
+            });
+            const res = await fetch(`/api/locations?${params.toString()}`);
+            if (res.ok) {
+                const { locations, total } = await res.json();
+                if (locations) {
+                    setLocalizaciones(Array.isArray(locations) ? locations : []);
+                    setTotalLocalizaciones(total);
+                } else {
+                    setMessage('No se pudieron cargar los datos de las localizaciones.');
+                }
             } else {
-                setMessage('No se pudieron cargar los datos de las localizaciones.');
+                setMessage('Error al cargar los datos de las localizaciones.');
             }
-          } else {
-            setMessage('Error al cargar los datos de las localizaciones.');
-          }
 
         } catch (error) {
-          setMessage('Error de red al cargar los datos de las localizaciones.');
-          console.error('Failed to fetch location data', error);
+            setMessage('Error de red al cargar los datos de las localizaciones.');
+            console.error('Failed to fetch location data', error);
         } finally {
-          setLoading(false);
+            setLoading(false);
         }
     };
 
@@ -77,19 +80,19 @@ const LocalizacionesPage = () => {
     useEffect(() => {
         setCurrentPage(1);
     }, [debouncedSearch]);
-    
+
     // Transforma una imagen a base64
     const fileToBase64 = (file: File): Promise<string> => new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => {
-        if (typeof reader.result === 'string') {
-            resolve(reader.result);
-        } else {
-            reject(new Error('Failed to convert file to base64 string'));
-        }
-      };
-      reader.onerror = reject;
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => {
+            if (typeof reader.result === 'string') {
+                resolve(reader.result);
+            } else {
+                reject(new Error('Failed to convert file to base64 string'));
+            }
+        };
+        reader.onerror = reject;
     });
 
     // Maneja el envío del formulario para agregar una nueva localización
@@ -103,7 +106,7 @@ const LocalizacionesPage = () => {
         let imageData = null;
         if (newImage) {
             const base64 = await fileToBase64(newImage);
-            imageData = base64.split(",")[1]; 
+            imageData = base64.split(",")[1];
         }
 
         try {
@@ -114,7 +117,6 @@ const LocalizacionesPage = () => {
             });
 
             if (res.ok) {
-                const { location } = await res.json();
                 setMessage("Localización creada exitosamente.");
                 setNewName("");
                 setNewImage(null);
@@ -129,6 +131,22 @@ const LocalizacionesPage = () => {
         }
     };
 
+    // Al abrir la modal, enfocar el primer input
+    useEffect(() => {
+        if (showForm) {
+            // esperar al siguiente tick para asegurar que el input está montado
+            requestAnimationFrame(() => {
+                // Primero intentar el ref (por si Input forwardea refs). Si no, usar id como fallback.
+                if (nameInputRef.current) {
+                    nameInputRef.current.focus();
+                } else {
+                    const el = document.getElementById('location-name-input') as HTMLInputElement | null;
+                    el?.focus();
+                }
+            });
+        }
+    }, [showForm]);
+
     return (
         <>
 
@@ -141,9 +159,8 @@ const LocalizacionesPage = () => {
                         onSearchChange={setSearch}
                     />
                 </div>
-                <button className={`px-4 py-2 text-white rounded transition flex items-center gap-2 ${
-                    showForm ? "bg-red-600 hover:bg-red-700" : "bg-green-600 hover:bg-green-700"
-                }`}
+                <button className={`px-4 py-2 text-white rounded transition flex items-center gap-2 ${showForm ? "bg-red-600 hover:bg-red-700" : "bg-green-600 hover:bg-green-700"
+                    }`}
                     onClick={() => {
                         if (showForm) {
                             setNewName("");
@@ -173,10 +190,12 @@ const LocalizacionesPage = () => {
                 >
                     <div className="flex gap-4 items-end">
                         <Input
+                            autoComplete="off"
+                            id="location-name-input"
                             label="Nombre de la localización"
                             placeholder="Ej. Plaza Bolívar"
                             value={newName}
-                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewName(e.target.value)}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewName(e.target.value.toUpperCase())}
                             className="flex-grow"
                         />
                         <div>
@@ -212,25 +231,29 @@ const LocalizacionesPage = () => {
                         accessor: 'image',
                         render: (item) => (
                             item.image ? (
-                                <img
-                                src={`data:image/png;base64,${item.image}`}
-                                alt={`Imagen de ${item.name}`}
-                                className="w-10 h-10 rounded-full object-cover"
+                                <Image
+                                    src={`data:image/png;base64,${item.image}`}
+                                    alt={`Imagen de ${item.name}`}
+                                    width={40}
+                                    height={40}
+                                    className="w-full h-full object-cover"
                                 />
                             ) : (
                                 <div className="w-10 h-10 bg-gray-200 rounded-full" />
                             )
                         )
                     },
-                                        { header: 'Nombre', accessor: 'name', sortable: true },
-                                        { header: 'Asignaciones', accessor: 'total_assignments', sortable: true },
-                                        { header: 'Última guardia', accessor: 'last_guard', sortable: true, render: (item) => item.last_guard ? new Date(item.last_guard).toLocaleDateString('es-ES') : '—' },
-                                        { header: 'Acciones', accessor: 'id', render: (item) => (
-                                            <button
-                                                className="px-3 py-1 rounded bg-blue-600 text-white hover:bg-blue-700"
-                                                onClick={(e) => { e.stopPropagation(); setProfileLocationId(Number(item.id)); setProfileOpen(true); }}
-                                            >Ver Perfil</button>
-                                        )},
+                    { header: 'Nombre', accessor: 'name', sortable: true },
+                    { header: 'Servicios', accessor: 'total_assignments', sortable: true },
+                    { header: 'Última guardia', accessor: 'last_guard', sortable: true, render: (item) => item.last_guard ? new Date(item.last_guard).toLocaleDateString('es-ES') : '—' },
+                    {
+                        header: 'Acciones', accessor: 'id', render: (item) => (
+                            <button
+                                className="px-3 py-1 rounded bg-blue-600 text-white hover:bg-blue-700"
+                                onClick={(e) => { e.stopPropagation(); setProfileLocationId(Number(item.id)); setProfileOpen(true); }}
+                            >Ver Perfil</button>
+                        )
+                    },
                 ]}
                 data={localizaciones}
                 loading={loading}
@@ -239,16 +262,16 @@ const LocalizacionesPage = () => {
                 itemsPerPage={itemsPerPage}
                 onPageChange={setCurrentPage}
                 onItemsPerPageChange={setItemsPerPage}
-                                serverSortKey={sortBy}
-                                serverSortDir={sortDir}
-                                onSortChange={(key, dir) => { setSortBy(key); setSortDir(dir); setCurrentPage(1); }}
-                                onRowClick={(item) => router.push(`/localizacion/${item.id}`)}
+                serverSortKey={sortBy}
+                serverSortDir={sortDir}
+                onSortChange={(key, dir) => { setSortBy(key); setSortDir(dir); setCurrentPage(1); }}
+                onRowClick={(item) => router.push(`/localizacion/${item.id}`)}
             />
 
             <LocationProfileModal
-              isOpen={profileOpen}
-              onClose={() => setProfileOpen(false)}
-              locationId={profileLocationId}
+                isOpen={profileOpen}
+                onClose={() => setProfileOpen(false)}
+                locationId={profileLocationId}
             />
         </>
     );

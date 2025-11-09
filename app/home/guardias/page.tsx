@@ -3,7 +3,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import AssignGuardModal from '@/components/AssignGuardModal';
-import { UserCircleIcon, MapPinIcon, DevicePhoneMobileIcon, IdentificationIcon, PlusCircleIcon, TrashIcon, PencilIcon } from '@heroicons/react/24/outline';
+import { UserCircleIcon, MapPinIcon, DevicePhoneMobileIcon, IdentificationIcon, PlusCircleIcon, TrashIcon, PencilIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline';
+import { Tooltip } from 'react-tooltip';
+import 'react-tooltip/dist/react-tooltip.css'
 
 // Helper to get the start of the week (Tuesday)
 const getStartOfWeek = (date: Date) => {
@@ -212,7 +214,7 @@ const GuardiasPage = () => {
     }
   };
 
-  const getWeekDisplay = () => {
+  /* const getWeekDisplay = () => {
     const start = new Date(currentWeekStart);
     const end = new Date(start);
     end.setDate(start.getDate() + 6);
@@ -220,18 +222,39 @@ const GuardiasPage = () => {
     const endMonth = end.toLocaleString('es-ES', { month: 'long' });
     const monthDisplay = startMonth === endMonth ? startMonth : `${startMonth} / ${endMonth}`;
     return `${start.getDate()} de ${monthDisplay.charAt(0).toUpperCase() + monthDisplay.slice(1)} - ${end.getDate()} de ${endMonth.charAt(0).toUpperCase() + endMonth.slice(1)}`;
-  };
+  }; */
+
+  const getWeekDisplay = () => {
+    const start = new Date(currentWeekStart);
+    const end = new Date(start);
+    end.setDate(start.getDate() + 6);
+    
+    const formatDate = (date: Date) => {
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const year = String(date.getFullYear()).slice(-2);
+        return `${day}/${month}/${year}`;
+    };
+    
+    return `${formatDate(start)} - ${formatDate(end)}`;
+};
 
   return (
     <div className="w-full px-4 md:px-8 lg:px-16 py-6 bg-gray-50 min-h-screen">
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-gray-800">Gestión de Guardias</h1>
-          <div className="flex items-center gap-4 p-2 bg-white rounded-lg shadow-sm">
-            <button onClick={handlePrevWeek} className="p-2 rounded-md hover:bg-gray-100 text-gray-600">&lt;</button>
-            <div className="text-center font-semibold text-blue-600">{getWeekDisplay()}</div>
-            <button onClick={handleNextWeek} className="p-2 rounded-md hover:bg-gray-100 text-gray-600">&gt;</button>
-            <button onClick={handleExportWeek} className="ml-4 px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">Exportar Excel</button>
+          <div className="flex items-center w-[400px] gap-2 p-2 bg-white rounded-lg shadow-sm">
+            <button onClick={handlePrevWeek} className="p-2 rounded-md hover:bg-gray-100 text-gray-600 hover:rounded-full hover:cursor-pointer text-blue-800 font-semibold">&lt;</button>
+            <div className="text-center font-mono font-semibold text-blue-800 w-[180px]">{getWeekDisplay()}</div>
+            <button onClick={handleNextWeek} className="p-2 rounded-md hover:bg-gray-100 text-gray-600 hover:cursor-pointer hover:rounded-full text-blue-800 font-semibold">&gt;</button>
+            <button
+              onClick={handleExportWeek}
+              data-tooltip-id='my-tooltip'
+              className="ml-4 w-[120px] flex gap-1 px-3 py-2 bg-green-600 text-white rounded-md font-semibold hover:cursor-pointer hover:bg-green-700">
+              <ArrowDownTrayIcon className="w-5 h-5" />
+              Exportar
+              </button>
           </div>
         </div>
 
@@ -290,6 +313,19 @@ const GuardiasPage = () => {
           ))}
         </div>
       </div>
+
+
+      <Tooltip 
+        id="my-tooltip" 
+        place="top"
+        content="Descargar las guardias de la semana en un archivo Excel"
+        variant="dark"
+        style={{ 
+          zIndex: 9999,
+          fontSize: '14px',
+          padding: '8px 12px'
+        }}
+      />
 
       {(isModalOpen && selectedDate) && (
         <AssignGuardModal

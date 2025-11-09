@@ -25,7 +25,7 @@ isOpen, onClose, title, children, size = 'md' }) => {
     '3xl': 'max-w-3xl',
     '4xl': 'max-w-4xl',
     '5xl': 'max-w-5xl',
-    '6xl': 'max-w-6xl',
+    '6xl': 'max-w-6xl max-h-[94vh] overflow-y-auto',
   };
 
   return (

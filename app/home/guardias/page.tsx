@@ -251,6 +251,8 @@ const GuardiasPage = () => {
             <button
               onClick={handleExportWeek}
               data-tooltip-id='my-tooltip'
+              data-tooltip-content={"Descargar información en formato excel"}
+              data-tooltip-delay-show={200}
               className="ml-4 w-[120px] flex gap-1 px-3 py-2 bg-green-600 text-white rounded-md font-semibold hover:cursor-pointer hover:bg-green-700">
               <ArrowDownTrayIcon className="w-5 h-5" />
               Exportar
@@ -266,9 +268,16 @@ const GuardiasPage = () => {
                   <h3 className="font-bold text-xl text-gray-800 capitalize">{new Date(dailyAssignment.date).toLocaleDateString('es-ES', { weekday: 'long' })}</h3>
                   <p className="text-sm text-gray-500">{new Date(dailyAssignment.date).toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })}</p>
                 </div>
-                <button onClick={() => openCreateModal(dailyAssignment.date)} className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 flex items-center gap-2">
+                <button
+                  data-tooltip-id='guard-button'
+                  data-tooltip-content={"Asignar nueva guardia"}
+                  data-tooltip-delay-show={200}
+                  onClick={() => openCreateModal(dailyAssignment.date)}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg
+                    font-semibold hover:bg-blue-700 flex items-center 
+                    gap-2 hover:cursor-pointer">
                   <PlusCircleIcon className="w-5 h-5" />
-                  Agregar Guardia
+                  Asignar
                 </button>
               </div>
               
@@ -317,14 +326,13 @@ const GuardiasPage = () => {
 
       <Tooltip 
         id="my-tooltip" 
-        place="top"
-        content="Descargar las guardias de la semana en un archivo Excel"
-        variant="dark"
-        style={{ 
-          zIndex: 9999,
-          fontSize: '14px',
-          padding: '8px 12px'
-        }}
+        place="bottom"
+        variant="info"
+      />
+      <Tooltip 
+        id="guard-button" 
+        place="bottom"
+        variant="info"
       />
 
       {(isModalOpen && selectedDate) && (

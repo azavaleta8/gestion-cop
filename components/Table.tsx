@@ -174,8 +174,8 @@ const Table = <T extends { id: number | string; name?: string }>({
                   data-tooltip-id="row-tooltip"
                   data-tooltip-content={getTooltipMessage(item.name as string)}
                   onClick={() => onRowClick && onRowClick(item)}
-                  className={`cursor-pointer hover:bg-green-200 ${
-                    selectedRow?.id === item.id ? 'bg-blue-100' : ''
+                  className={`cursor-pointer hover:bg-cyan-200 ${
+                    selectedRow?.id === item.id ? 'bg-green-200' : ''
                   }`}
                 >
                   {columns.map((column, colIndex) => (

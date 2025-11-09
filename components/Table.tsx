@@ -172,6 +172,7 @@ const Table = <T extends { id: number | string; name?: string }>({
                 <tr
                   key={item.id}
                   data-tooltip-id="row-tooltip"
+                  data-tooltip-delay-show={200}
                   data-tooltip-content={getTooltipMessage(item.name as string)}
                   onClick={() => onRowClick && onRowClick(item)}
                   className={`cursor-pointer hover:bg-cyan-200 ${

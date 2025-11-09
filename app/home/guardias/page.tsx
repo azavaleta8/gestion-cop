@@ -245,9 +245,19 @@ const GuardiasPage = () => {
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-gray-800">Gestión de Guardias</h1>
           <div className="flex items-center w-[400px] gap-2 p-2 bg-white rounded-lg shadow-sm">
-            <button onClick={handlePrevWeek} className="p-2 rounded-md hover:bg-gray-100 text-gray-600 hover:rounded-full hover:cursor-pointer text-blue-800 font-semibold">&lt;</button>
+            <button
+              data-tooltip-id='last-week-tooltip'
+              data-tooltip-content={'Semana anterior'}
+              data-tooltip-delay-show={200}
+              onClick={handlePrevWeek}
+              className="p-2 rounded-md hover:bg-gray-100 text-gray-600 hover:rounded-full hover:cursor-pointer text-blue-800 font-semibold">&lt;</button>
             <div className="text-center font-mono font-semibold text-blue-800 w-[180px]">{getWeekDisplay()}</div>
-            <button onClick={handleNextWeek} className="p-2 rounded-md hover:bg-gray-100 text-gray-600 hover:cursor-pointer hover:rounded-full text-blue-800 font-semibold">&gt;</button>
+            <button
+              data-tooltip-id='next-week-tooltip'
+              data-tooltip-content={'Semana siguiente'}
+              data-tooltip-delay-show={200}
+              onClick={handleNextWeek}
+              className="p-2 rounded-md hover:bg-gray-100 text-gray-600 hover:cursor-pointer hover:rounded-full text-blue-800 font-semibold">&gt;</button>
             <button
               onClick={handleExportWeek}
               data-tooltip-id='my-tooltip'
@@ -331,6 +341,16 @@ const GuardiasPage = () => {
       />
       <Tooltip 
         id="guard-button" 
+        place="bottom"
+        variant="info"
+      />
+      <Tooltip 
+        id="last-week-tooltip" 
+        place="bottom"
+        variant="info"
+      />
+      <Tooltip 
+        id="next-week-tooltip" 
         place="bottom"
         variant="info"
       />

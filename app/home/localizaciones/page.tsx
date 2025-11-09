@@ -163,6 +163,7 @@ const LocalizacionesPage = () => {
                 <button
                     data-tooltip-id="register-service-button"
                     data-tooltip-content={"Crear nuevo servicio"}
+                    data-tooltip-delay-show={200}
                     className={`mb-4 px-3 py-2 text-white font-semibold rounded
                         transition flex items-center gap-2 hover:cursor-pointer
                         ${showForm

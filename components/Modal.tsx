@@ -40,6 +40,7 @@ isOpen, onClose, title, children, size = 'md' }) => {
               onClick={onClose}
               data-tooltip-id="modal-close-tooltip"
               data-tooltip-content="Cerrar"
+              data-tooltip-delay-show={200}
               aria-label="Cerrar modal"
               className="text-gray-400 hover:text-red-600 hover:cursor-pointer
               focus:outline-none transition-colors duration-200 p-1 rounded"

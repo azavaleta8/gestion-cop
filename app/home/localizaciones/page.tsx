@@ -1,6 +1,6 @@
 "use client";
 
-import { PlusIcon, PhotoIcon } from "@heroicons/react/24/solid";
+import { PlusCircleIcon, PhotoIcon } from "@heroicons/react/24/solid";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Input } from "@heroui/react";
@@ -10,6 +10,7 @@ import Table from "@/components/Table";
 import useDebounce from "@/lib/hooks/useDebounce";
 import LocationProfileModal from "@/components/LocationProfileModal";
 import Image from 'next/image';
+import { Tooltip } from "react-tooltip";
 
 interface Localizacion {
     id: string;
@@ -152,15 +153,25 @@ const LocalizacionesPage = () => {
 
             <h1 className="text-2xl font-bold mb-5">Servicios</h1>
 
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex gap-4 items-center mb-6">
                 <div className="w-1/3">
                     <SearchBar
                         placeholder="Buscar localización por nombre..."
                         onSearchChange={setSearch}
                     />
                 </div>
-                <button className={`px-4 py-2 text-white rounded transition flex items-center gap-2 ${showForm ? "bg-red-600 hover:bg-red-700" : "bg-green-600 hover:bg-green-700"
-                    }`}
+                <button
+                    data-tooltip-id="register-service-button"
+                    data-tooltip-content={"Crear nuevo servicio"}
+                    className={`mb-4 px-3 py-2 text-white font-semibold rounded
+                        transition flex items-center gap-2 hover:cursor-pointer
+                        ${showForm
+                            ?
+                            "bg-red-600 hover:bg-red-700"
+                            :
+                            "bg-green-600 hover:bg-green-700"
+                        }`
+                    }
                     onClick={() => {
                         if (showForm) {
                             setNewName("");
@@ -172,8 +183,8 @@ const LocalizacionesPage = () => {
                 >
                     {showForm ? "Cancelar" : (
                         <>
-                            <PlusIcon className="w-5 h-5" />
-                            Agregar nueva localización
+                            <PlusCircleIcon className="w-5 h-5 font-semibold" />
+                            Crear
                         </>
                     )}
                 </button>
@@ -244,16 +255,31 @@ const LocalizacionesPage = () => {
                         )
                     },
                     { header: 'Nombre', accessor: 'name', sortable: true },
-                    { header: 'Servicios', accessor: 'total_assignments', sortable: true },
-                    { header: 'Última guardia', accessor: 'last_guard', sortable: true, render: (item) => item.last_guard ? new Date(item.last_guard).toLocaleDateString('es-ES') : '—' },
+                    { header: 'Guardias', accessor: 'total_assignments', sortable: true },
                     {
+                        header: 'Última guardia',
+                        accessor: 'last_guard',
+                        sortable: true,
+                        render: (item: Localizacion) => item.last_guard ? (
+                            <span className="font-mono">
+                                {new Date(item.last_guard).toLocaleDateString('es-ES', {
+                                    day: '2-digit',
+                                    month: '2-digit',
+                                    year: 'numeric'
+                                })}
+                            </span>
+                        ) : (
+                            <span className="font-mono text-gray-400">—</span>
+                        ),
+                    },
+                    /* {
                         header: 'Acciones', accessor: 'id', render: (item) => (
                             <button
                                 className="px-3 py-1 rounded bg-blue-600 text-white hover:bg-blue-700"
                                 onClick={(e) => { e.stopPropagation(); setProfileLocationId(Number(item.id)); setProfileOpen(true); }}
                             >Ver Perfil</button>
                         )
-                    },
+                    }, */
                 ]}
                 data={localizaciones}
                 loading={loading}
@@ -265,13 +291,28 @@ const LocalizacionesPage = () => {
                 serverSortKey={sortBy}
                 serverSortDir={sortDir}
                 onSortChange={(key, dir) => { setSortBy(key); setSortDir(dir); setCurrentPage(1); }}
-                onRowClick={(item) => router.push(`/localizacion/${item.id}`)}
+                onRowClick={(item) => {
+                    setProfileLocationId(Number(item.id));
+                    setProfileOpen(true);
+                }}
             />
 
             <LocationProfileModal
                 isOpen={profileOpen}
                 onClose={() => setProfileOpen(false)}
                 locationId={profileLocationId}
+            />
+            <Tooltip
+                id="register-service-button"
+                place="bottom"
+                variant="info"
+                offset={10}
+            />
+            <Tooltip
+                id="row-tooltip"
+                place="bottom"
+                variant="info"
+                offset={5}
             />
         </>
     );

@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Loader from '@/components/Loader';
-import { useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 
 interface Column<T> {
   header: string;
@@ -28,7 +28,7 @@ interface TableProps<T> {
   onSortChange?: (key: keyof T, dir: 'asc' | 'desc') => void;
 }
 
-const Table = <T extends { id: number | string }>({
+const Table = <T extends { id: number | string; name?: string }>({
   columns,
   data,
   loading = false,
@@ -43,6 +43,21 @@ const Table = <T extends { id: number | string }>({
   serverSortDir = 'asc',
   onSortChange,
 }: TableProps<T>) => {
+  const pathname = usePathname();
+  
+  // Determinar el mensaje del tooltip según la ruta
+  const getTooltipMessage = (itemName?: string) => {
+    const name = itemName || 'este elemento';
+    
+    if (pathname.includes('localizaciones')) {
+      return `Hacer clic para visualizar el historial de guardias del servicio ${name.toUpperCase()}`;
+    } else if (pathname.includes('trabajadores')) {
+      return `Hacer clic para visualizar el historial de guardias de ${name.toUpperCase()}`;
+    } else {
+      return `Hacer clic para visualizar ficha ${name}`;
+    }
+  };
+
   const totalPages = totalItems > 0 ? Math.ceil(totalItems / itemsPerPage) : 0;
 
   const [sortKey, setSortKey] = React.useState<keyof T | null>(null);
@@ -157,7 +172,7 @@ const Table = <T extends { id: number | string }>({
                 <tr
                   key={item.id}
                   data-tooltip-id="row-tooltip"
-                  data-tooltip-content={`Hacer click para visualizar perfil de ${item.name}`}
+                  data-tooltip-content={getTooltipMessage(item.name as string)}
                   onClick={() => onRowClick && onRowClick(item)}
                   className={`cursor-pointer hover:bg-green-200 ${
                     selectedRow?.id === item.id ? 'bg-blue-100' : ''

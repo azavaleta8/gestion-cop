@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import React from 'react';
-import RolesManager from '../../../components/RolesManager';
+import React from "react";
+import RolesManager from "../../components/RolesManager";
 
 const RolesPage = () => {
   return (
@@ -12,4 +12,3 @@ const RolesPage = () => {
 };
 
 export default RolesPage;
-

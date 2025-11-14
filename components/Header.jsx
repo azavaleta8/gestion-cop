@@ -12,17 +12,6 @@ export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef(null);
 
-
-  // Si no hay sesión, no renderizar nada
-  if (!session) {
-    return null;
-  }
-  
-  // Función para verificar si la ruta está activa
-  const isActive = (path) => {
-    return pathname?.startsWith(path);
-  };
-
   // Cerrar menú al hacer click fuera
   useEffect(() => {
     function handleClickOutside(event) {
@@ -35,11 +24,20 @@ export default function Header() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Si no hay sesión, no renderizar nada
+  if (!session) {
+    return null;
+  }
+  // Función para verificar si la ruta está activa
+  const isActive = (path) => {
+    return pathname?.startsWith(path);
+  };
+
   const navItems = [
-    { href: "/home/guardias", label: "Guardias" },
-    { href: "/home/trabajadores", label: "Funcionarios" },
-    { href: "/home/localizaciones", label: "Servicios" },
-    { href: "/home/roles", label: "Rangos" },
+    { href: "guardias", label: "Guardias" },
+    { href: "trabajadores", label: "Funcionarios" },
+    { href: "localizaciones", label: "Servicios" },
+    { href: "roles", label: "Rangos" },
   ];
 
   const handleLogout = async () => {
@@ -56,8 +54,8 @@ export default function Header() {
         <div className="flex justify-between items-center">
           {/* Logo */}
           <div className="flex items-center">
-            <Link 
-              href="/" 
+            <Link
+              href="/"
               className="text-xl font-bold bg-clip-text text-blue-800"
             >
               CENTRO DE OPERACIONES POLICIALES
@@ -74,20 +72,22 @@ export default function Header() {
                   className={`
                     relative px-4 py-2 rounded-lg text-lg font-bold
                     transition-all duration-200
-                    ${isActive(item.href)
-                      ? "text-blue-800 cursor-default"
-                      : `text-gray-800 hover:text-white hover:bg-blue-800
+                    ${
+                      isActive(item.href)
+                        ? "text-blue-800 cursor-default"
+                        : `text-gray-800 hover:text-white hover:bg-blue-800
                         hover:shadow-md hover:rounded-full`
                     }
                   `}
                 >
                   {item.label}
-                  
+
                   {/* Indicador activo */}
                   {isActive(item.href) && (
                     <div
                       className="absolute bottom-0 left-0 w-full h-0.5
-                        bg-blue-800" />
+                        bg-blue-800"
+                    />
                   )}
                 </Link>
               ))}
@@ -96,7 +96,6 @@ export default function Header() {
             {/* Información de usuario y menú hamburguesa */}
             {session?.user && (
               <div className="flex items-center space-x-4" ref={menuRef}>
-
                 {/* Menú hamburguesa */}
                 <div className="relative">
                   <button
@@ -111,17 +110,17 @@ export default function Header() {
                     aria-expanded={isMenuOpen}
                   >
                     {/* Icono de 3 barras (hamburguesa) */}
-                    <svg 
-                      className="w-5 h-5 text-black-600" 
-                      fill="none" 
-                      stroke="currentColor" 
+                    <svg
+                      className="w-5 h-5 text-black-600"
+                      fill="none"
+                      stroke="currentColor"
                       viewBox="0 0 24 24"
                     >
-                      <path 
-                        strokeLinecap="round" 
-                        strokeLinejoin="round" 
-                        strokeWidth={2} 
-                        d="M4 6h16M4 12h16M4 18h16" 
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M4 6h16M4 12h16M4 18h16"
                       />
                     </svg>
                   </button>
@@ -131,34 +130,36 @@ export default function Header() {
                     <div
                       className="absolute right-0 mt-8 w-48 bg-white
                         rounded-md shadow-lg border border-gray-200
-                        z-50 ">
+                        z-50 "
+                    >
                       <div
                         className="px-3 py-2 text-xs text-gray-500 border-b
-                          border-gray-100">
+                          border-gray-100"
+                      >
                         <p className=" text-lg font-medium">Perfil: Admin</p>
                         <p className="text-lg font-medium">
                           DNI: {session.user.dni}
                         </p>
                       </div>
-                      
+
                       <button
                         onClick={handleLogout}
                         className="w-full text-left px-4 text-lg font-medium
                         text-red-600 hover:bg-red-50 transition-colors flex
                         items-center"
                       >
-                        <svg 
-                          className="w-8 h-8 mr-2" 
-                          fill="none" 
-                          stroke="currentColor" 
+                        <svg
+                          className="w-8 h-8 mr-2"
+                          fill="none"
+                          stroke="currentColor"
                           viewBox="0 0 24 24"
                         >
-                          <path 
-                            strokeLinecap="round" 
-                            strokeLinejoin="round" 
-                            strokeWidth={2} 
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
                             d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3
-                            3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" 
+                            3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
                           />
                         </svg>
                         <LogoutButton />

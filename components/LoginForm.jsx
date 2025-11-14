@@ -43,7 +43,7 @@ const LoginForm = () => {
     }
 
     // Successful sign in
-    router.push("/home");
+    router.push("guardias");
   };
 
   return (

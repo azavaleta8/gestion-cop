@@ -6,13 +6,15 @@ export default async function HomePage() {
   const session = await getServerSession();
 
   if (session) {
-    redirect("/home");
+    redirect("guardias");
   }
   return (
     <main className="min-h-screen gap-5 bg-gray-100 flex items-center justify-center">
       <div className="flex flex-col items-center mb-6">
         <h1 className="text-4xl font-bold text-gray-800">Bienvenido a</h1>
-        <h1 className="text-4xl font-bold text-gray-800">gestión <span className="text-primary">COP</span></h1>
+        <h1 className="text-4xl font-bold text-gray-800">
+          gestión <span className="text-primary">COP</span>
+        </h1>
       </div>
 
       <div className="flex flex-col gap-4 w-full max-w-sm">
@@ -33,4 +35,3 @@ export default async function HomePage() {
     </main>
   );
 }
-

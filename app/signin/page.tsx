@@ -3,15 +3,15 @@ import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 
 export default async function Signin() {
-    const session = await getServerSession();
+  const session = await getServerSession();
 
-    if (session) {
-        redirect("/home");
-    }
+  if (session) {
+    redirect("guardias");
+  }
 
-    return (
-        <main className="w-full h-svh flex flex-col justify-center items-center">
-            <LoginForm />
-        </main>
-    );
+  return (
+    <main className="w-full h-svh flex flex-col justify-center items-center">
+      <LoginForm />
+    </main>
+  );
 }

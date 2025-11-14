@@ -6,7 +6,7 @@ export default async function Register() {
   const session = await getServerSession();
 
   if (session) {
-    redirect("/home");
+    redirect("guardias");
   }
 
   return (

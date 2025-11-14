@@ -262,7 +262,7 @@ const GuardiasPage = () => {
   };
 
   return (
-    <div className="w-full px-4 md:px-8 lg:px-16 py-6 bg-gray-50 min-h-screen">
+    <>
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-gray-800">
@@ -424,7 +424,7 @@ const GuardiasPage = () => {
           // initialData={editingGuard} // This would be an enhancement for the modal
         />
       )}
-    </div>
+    </>
   );
 };
 

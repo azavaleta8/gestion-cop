@@ -35,7 +35,9 @@ export default async function RootLayout({
       >
         <Providers session={session}>
           <Header />
-          {children}
+          <div className="w-full px-4 md:px-8 lg:px-16 py-6 bg-gray-50 min-h-screen">
+            {children}
+          </div>
         </Providers>
       </body>
     </html>

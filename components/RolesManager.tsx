@@ -153,18 +153,18 @@ const RolesManager = () => {
           onClick={() => setShowForm(true)}
         >
           <PlusIcon className="w-5 h-5" />
-          Agregar Nuevo Rol
+          Agregar nuevo Rango
         </button>
       </div>
 
       <Modal
         isOpen={showForm}
         onClose={() => setShowForm(false)}
-        title="Agregar Nuevo Rol"
+        title="Agregar nuevo Rango"
       >
         <form onSubmit={handleCreate} className="flex flex-col gap-4">
           <Input
-            label="Nombre del rol"
+            label="Nombre del rango"
             placeholder="Ej. Administrador"
             value={newRolName}
             onChange={(e) => setNewRolName(e.target.value)}

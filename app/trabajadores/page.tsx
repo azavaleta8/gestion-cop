@@ -4,11 +4,10 @@ import {
   PlusCircleIcon,
   PhotoIcon,
   UserCircleIcon,
-  UserIcon,
 } from "@heroicons/react/24/solid";
 import { useState, useEffect, useRef } from "react";
 import { encode } from "js-base64";
-import { Input, Button } from "@heroui/react";
+import { Input } from "@heroui/react";
 import useDebounce from "@/lib/hooks/useDebounce";
 import SearchBar from "@/components/SearchBar";
 import Modal from "@/components/Modal";
@@ -262,28 +261,6 @@ const TrabajadoresPage = () => {
       sortable: true,
       sortValue: (i) => (i.last_guard ? new Date(i.last_guard) : null),
     },
-    /* {
-            header: 'Opciones', accessor: 'id', render: (item: Funcionario) => (
-                <Button
-                    data-tooltip-id="profile-cop-button"
-                    data-tooltip-content={"Visualizar información del funcionario"}
-                    color="primary"
-                    className="px-4 py-2 text-white font-semibold rounded 
-                    transition flex items-center gap-2 bg-green-600
-                    hover:bg-green-700"
-                    radius="sm"
-                    size="md"
-                    onPress={() => {
-                        const encodedId = encode(item.id.toString());
-                        setSelectedEncodedId(encodedId);
-                        setProfileModalOpen(true);
-                    }}
-                >
-                    <UserIcon className="w-5 h-5" />
-                    Perfil
-                </Button>
-            )
-        } */
   ];
 
   return (
@@ -398,7 +375,7 @@ const TrabajadoresPage = () => {
             placeholder="Ej. 12345678"
             value={newDni}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-              const soloNumeros = e.target.value.replace(/\D/g, "");
+              const soloNumeros = e.target.value.replaceAll(/\D/g, "");
               setNewDni(soloNumeros);
             }}
           />
@@ -409,7 +386,7 @@ const TrabajadoresPage = () => {
             placeholder="Ej. 4123456789"
             value={newPhone}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-              const soloNumeros = e.target.value.replace(/\D/g, "");
+              const soloNumeros = e.target.value.replaceAll(/\D/g, "");
               setNewPhone(soloNumeros);
             }}
           />
@@ -418,7 +395,7 @@ const TrabajadoresPage = () => {
               htmlFor="rol"
               className="block text-sm font-medium text-gray-700"
             >
-              Rol del funcionario
+              Rango del funcionario
             </label>
             <select
               id="rol"
@@ -428,7 +405,7 @@ const TrabajadoresPage = () => {
               }
               className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
             >
-              <option value="">Seleccione una jerarquia</option>
+              <option value="">Seleccione una jerarquía</option>
               {roles.map((rol) => (
                 <option key={rol.id} value={rol.id}>
                   {rol.name}

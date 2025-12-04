@@ -252,9 +252,9 @@ const LocalizacionesPage = () => {
                 <Image
                   src={`data:image/png;base64,${item.image}`}
                   alt={`Imagen de ${item.name}`}
-                  width={40}
-                  height={40}
-                  className="w-full h-full object-cover"
+                  width={360}
+                  height={360}
+                  className="object-cover"
                 />
               ) : (
                 <div className="w-10 h-10 bg-gray-200 rounded-full" />

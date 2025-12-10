@@ -15,6 +15,8 @@ import StaffProfileModal from "@/components/StaffProfileModal";
 import Table from "@/components/Table";
 import Image from "next/image";
 import { Tooltip } from "react-tooltip";
+import { useSession } from "next-auth/react";
+import { redirect } from "next/navigation";
 
 interface Rol {
   id: number;
@@ -55,6 +57,12 @@ const TrabajadoresPage = () => {
   const [selectedEncodedId, setSelectedEncodedId] = useState<string | null>(
     null
   );
+
+  const { data: session } = useSession();
+
+  if (!session) {
+    redirect("/");
+  }
 
   const debouncedSearch = useDebounce(search, 500);
 

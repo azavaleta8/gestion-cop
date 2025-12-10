@@ -15,6 +15,8 @@ import {
 } from "@heroicons/react/24/outline";
 import { Tooltip } from "react-tooltip";
 import "react-tooltip/dist/react-tooltip.css";
+import { redirect } from "next/navigation";
+import { useSession } from "next-auth/react";
 
 // Helper to get the start of the week (Tuesday)
 const getStartOfWeek = (date: Date) => {
@@ -65,6 +67,12 @@ const GuardiasPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingGuard, setEditingGuard] = useState<Guard | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+
+  const { data: session } = useSession();
+
+  if (!session) {
+    redirect("/");
+  }
 
   const fetchGuardsForWeek = useCallback(async () => {
     const startDate = new Date(currentWeekStart);

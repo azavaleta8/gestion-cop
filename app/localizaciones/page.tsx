@@ -2,7 +2,7 @@
 
 import { PlusCircleIcon, PhotoIcon } from "@heroicons/react/24/solid";
 import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { redirect, useRouter } from "next/navigation";
 import { Input } from "@heroui/react";
 import SearchBar from "@/components/SearchBar";
 import Modal from "@/components/Modal";
@@ -11,6 +11,7 @@ import useDebounce from "@/lib/hooks/useDebounce";
 import LocationProfileModal from "@/components/LocationProfileModal";
 import Image from "next/image";
 import { Tooltip } from "react-tooltip";
+import { useSession } from "next-auth/react";
 
 interface Localizacion {
   id: string;
@@ -39,6 +40,12 @@ const LocalizacionesPage = () => {
   const [profileLocationId, setProfileLocationId] = useState<number | null>(
     null
   );
+
+  const { data: session } = useSession();
+
+  if (!session) {
+    redirect("/");
+  }
 
   const router = useRouter();
   const debouncedSearch = useDebounce(search, 500);

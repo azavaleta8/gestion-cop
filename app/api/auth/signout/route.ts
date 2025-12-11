@@ -9,10 +9,23 @@ export async function POST() {
     "__Secure-next-auth.session-token",
     "next-auth.csrf-token",
     "__Host-next-auth.csrf-token",
+    "next-auth.callback-url",
+    "__Secure-next-auth.callback-url",
+    "next-auth.pkce.code_verifier",
+    "__Secure-next-auth.pkce.code_verifier",
+    "__Host-next-auth.pkce.code_verifier",
   ];
 
   cookiesToClear.forEach((name) => {
-    res.cookies.set({ name, value: "", path: "/", expires: new Date(0) });
+    res.cookies.set({
+      name,
+      value: "",
+      path: "/",
+      expires: new Date(0),
+      httpOnly: true,
+      sameSite: "lax",
+      secure: true,
+    });
   });
 
   return res;
